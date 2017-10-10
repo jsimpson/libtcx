@@ -1,6 +1,9 @@
 # Binaries
 fasttcx
 
+# TCX files
+*.tcx
+
 # Prerequisites
 *.d
 
