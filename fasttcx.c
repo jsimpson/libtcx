@@ -202,6 +202,7 @@ main(int argc, char * argv[])
 
     free(tcx->activity->laps);
     free(tcx->activity);
+    free(tcx->filename);
     free(tcx);
 
     return 0;
