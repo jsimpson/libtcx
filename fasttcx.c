@@ -100,26 +100,40 @@ main(int argc, char * argv[])
         return 1;
     }
 
-    xmlDocPtr doc = xmlReadFile(tcx->filename, NULL, 0);
-    if (doc == NULL)
+    xmlDocPtr document = xmlReadFile(tcx->filename, NULL, 0);
+    if (document == NULL)
     {
         fprintf(stderr, "Could not parse %s.\n", tcx->filename);
         return 1;
     }
 
-    xmlXPathContextPtr context = xmlXPathNewContext(doc);
-    xmlXPathRegisterNs(context, (xmlChar*)"tcx", (xmlChar *)"http://www.garmin.com/xmlschemas/TrainingCenterDatabase/v2");
+    xmlXPathContextPtr context = xmlXPathNewContext(document);
+    xmlXPathRegisterNs(context, (xmlChar *)"tcx", (xmlChar *)"http://www.garmin.com/xmlschemas/TrainingCenterDatabase/v2");
 
     xmlXPathObjectPtr activity = xmlXPathEvalExpression((xmlChar *)"//tcx:Activity", context);
-
-    if (activity == NULL || xmlXPathNodeSetIsEmpty(activity->nodesetval)){
+    if (activity == NULL || xmlXPathNodeSetIsEmpty(activity->nodesetval))
+    {
         printf("No activities found in \"%s\"\n", tcx->filename);
         return 1;
     }
 
     xmlNodeSetPtr lap_nodes = activity->nodesetval;
+    for (int i = 0; i < lap_nodes->nodeNr; i++)
+    {
+        if (lap_nodes->nodeTab[i]->type != XML_ELEMENT_NODE)
+        {
+            continue;
+        }
 
-    xmlFreeDoc(doc);
+        xmlXPathObjectPtr total_time_seconds = xmlXPathEvalExpression((xmlChar *)"//tcx:TotalTimeSeconds/text()", context);
+        if (total_time_seconds != 0)
+        {
+            xmlChar * val = total_time_seconds->nodesetval->nodeTab[0]->content;
+            printf("total time: %s seconds.\n", val);
+        }
+    }
+
+    xmlFreeDoc(document);
     xmlCleanupParser();
     free(tcx);
 
