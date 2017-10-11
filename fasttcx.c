@@ -6,6 +6,10 @@
 #include <libxml/xpath.h>
 #include <libxml/xpathInternals.h>
 
+int parse_element_to_i(char * element, xmlXPathContextPtr context);
+double parse_element_to_f(char * element, xmlXPathContextPtr context);
+char * parse_element_to_s(char * element, xmlXPathContextPtr context);
+
 typedef struct
 {
     char * time;
@@ -80,6 +84,55 @@ typedef struct
 } tcx_t;
 
 int
+parse_element_to_i(char * element, xmlXPathContextPtr context)
+{
+    int value = 0;
+
+    xmlXPathObjectPtr expr = xmlXPathEvalExpression((xmlChar *)element, context);
+    if (expr != NULL)
+    {
+        xmlChar * content = expr->nodesetval->nodeTab[0]->content;
+        value = atoi((char *)content);
+        free(expr);
+    }
+
+    return value;
+}
+
+double
+parse_element_to_f(char * element, xmlXPathContextPtr context)
+{
+    double value = 0.0;
+
+    xmlXPathObjectPtr expr = xmlXPathEvalExpression((xmlChar *)element, context);
+    if (expr != NULL)
+    {
+        char * end = NULL;
+        xmlChar * content = expr->nodesetval->nodeTab[0]->content;
+        value = strtod((char *)content, (char **)&end);
+        free(expr);
+    }
+
+    return value;
+}
+
+char *
+parse_element_to_s(char * element, xmlXPathContextPtr context)
+{
+    char * value = 0;
+
+    xmlXPathObjectPtr expr = xmlXPathEvalExpression((xmlChar *)element, context);
+    if (expr != NULL)
+    {
+        xmlChar * content = expr->nodesetval->nodeTab[0]->content;
+        value = (char *)content;
+        free(expr);
+    }
+
+    return value;
+}
+
+int
 main(int argc, char * argv[])
 {
     tcx_t * tcx = calloc(1, sizeof(tcx_t));
@@ -87,6 +140,7 @@ main(int argc, char * argv[])
     if (argc < 2)
     {
         fprintf(stderr, "Please supply a .TCX file.\n");
+        free(tcx);
         return 1;
     }
     else
@@ -97,6 +151,7 @@ main(int argc, char * argv[])
     if (access(tcx->filename, F_OK) != 0)
     {
         fprintf(stderr, "Unable to locate %s.\n", tcx->filename);
+        free(tcx);
         return 1;
     }
 
@@ -104,6 +159,7 @@ main(int argc, char * argv[])
     if (document == NULL)
     {
         fprintf(stderr, "Could not parse %s.\n", tcx->filename);
+        free(tcx);
         return 1;
     }
 
@@ -114,6 +170,9 @@ main(int argc, char * argv[])
     if (activity == NULL || xmlXPathNodeSetIsEmpty(activity->nodesetval))
     {
         printf("No activities found in \"%s\"\n", tcx->filename);
+        free(tcx);
+        xmlFreeDoc(document);
+        xmlCleanupParser();
         return 1;
     }
 
@@ -123,22 +182,21 @@ main(int argc, char * argv[])
 
     for (int i = 0; i < lap_nodes->nodeNr; i++)
     {
-
         if (lap_nodes->nodeTab[i]->type != XML_ELEMENT_NODE)
         {
             continue;
         }
 
-        xmlXPathObjectPtr total_time_seconds = xmlXPathEvalExpression((xmlChar *)"//tcx:TotalTimeSeconds/text()", context);
-        if (total_time_seconds != 0)
-        {
-            char * end = NULL;
-            xmlChar * value = total_time_seconds->nodesetval->nodeTab[0]->content;
-            tcx->activity->laps[i].total_time = strtod((char *)value, (char **)&end);
-            printf("total time: %.1f seconds.\n", tcx->activity->laps[i].total_time);
-        }
+        tcx->activity->laps[i].total_time = parse_element_to_f("//tcx:TotalTimeSeconds/text()", context);
+        tcx->activity->laps[i].distance = parse_element_to_f("//tcx:DistanceMeters/text()", context);
+        tcx->activity->laps[i].calories = parse_element_to_i("//tcx:Calories/text()", context);
+        tcx->activity->laps[i].heart_rate_average = parse_element_to_i("//tcx:AverageHeartRateBpm/tcx:Value/text()", context);
+        tcx->activity->laps[i].heart_rate_maximum = parse_element_to_i("//tcx:MaximumHeartRateBpm/tcx:Value/text()", context);
+        tcx->activity->laps[i].intensity = parse_element_to_s("//tcx:Intensity/text()", context);
     }
 
+    xmlXPathFreeObject(activity);
+    xmlXPathFreeContext(context);
     xmlFreeDoc(document);
     xmlCleanupParser();
     free(tcx);
