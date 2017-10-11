@@ -24,7 +24,7 @@ typedef struct
 typedef struct
 {
     trackpoint_t * trackpoints;
-    struct tract * next;
+    struct track * next;
 } track_t;
 
 typedef struct
@@ -117,9 +117,13 @@ main(int argc, char * argv[])
         return 1;
     }
 
+    tcx->activity = calloc(1, sizeof(activity_t));
     xmlNodeSetPtr lap_nodes = activity->nodesetval;
+    tcx->activity->laps = calloc(lap_nodes->nodeNr, sizeof(lap_t));
+
     for (int i = 0; i < lap_nodes->nodeNr; i++)
     {
+
         if (lap_nodes->nodeTab[i]->type != XML_ELEMENT_NODE)
         {
             continue;
@@ -128,8 +132,10 @@ main(int argc, char * argv[])
         xmlXPathObjectPtr total_time_seconds = xmlXPathEvalExpression((xmlChar *)"//tcx:TotalTimeSeconds/text()", context);
         if (total_time_seconds != 0)
         {
-            xmlChar * val = total_time_seconds->nodesetval->nodeTab[0]->content;
-            printf("total time: %s seconds.\n", val);
+            char * end = NULL;
+            xmlChar * value = total_time_seconds->nodesetval->nodeTab[0]->content;
+            tcx->activity->laps[i].total_time = strtod((char *)value, (char **)&end);
+            printf("total time: %.1f seconds.\n", tcx->activity->laps[i].total_time);
         }
     }
 
