@@ -93,7 +93,7 @@ parse_element_to_i(char * element, xmlXPathContextPtr context)
     {
         xmlChar * content = expr->nodesetval->nodeTab[0]->content;
         value = atoi((char *)content);
-        free(expr);
+        xmlXPathFreeObject(expr);
     }
 
     return value;
@@ -110,7 +110,7 @@ parse_element_to_f(char * element, xmlXPathContextPtr context)
         char * end = NULL;
         xmlChar * content = expr->nodesetval->nodeTab[0]->content;
         value = strtod((char *)content, (char **)&end);
-        free(expr);
+        xmlXPathFreeObject(expr);
     }
 
     return value;
@@ -126,7 +126,7 @@ parse_element_to_s(char * element, xmlXPathContextPtr context)
     {
         xmlChar * content = expr->nodesetval->nodeTab[0]->content;
         value = (char *)content;
-        free(expr);
+        xmlXPathFreeObject(expr);
     }
 
     return value;
@@ -170,9 +170,9 @@ main(int argc, char * argv[])
     if (activity == NULL || xmlXPathNodeSetIsEmpty(activity->nodesetval))
     {
         printf("No activities found in \"%s\"\n", tcx->filename);
-        free(tcx);
         xmlFreeDoc(document);
         xmlCleanupParser();
+        free(tcx);
         return 1;
     }
 
@@ -199,6 +199,9 @@ main(int argc, char * argv[])
     xmlXPathFreeContext(context);
     xmlFreeDoc(document);
     xmlCleanupParser();
+
+    free(tcx->activity->laps);
+    free(tcx->activity);
     free(tcx);
 
     return 0;
