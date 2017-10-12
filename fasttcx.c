@@ -75,7 +75,9 @@ parse_lap(xmlDocPtr document, xmlNsPtr ns, xmlNodePtr node)
 
     if (xmlHasProp(node, (xmlChar*)"StartTime"))
     {
-        lap->start_time = (char *)xmlGetProp(node, (xmlChar *)"StartTime");
+        xmlChar * content = xmlGetProp(node, (xmlChar *)"StartTime");
+        lap->start_time = strdup((const char *)content);
+        xmlFree(content);
     }
 
     node = node->xmlChildrenNode;
@@ -85,6 +87,7 @@ parse_lap(xmlDocPtr document, xmlNsPtr ns, xmlNodePtr node)
             char * end = NULL;
             xmlChar * content = xmlNodeListGetString(document, node->xmlChildrenNode, 1);
             lap->total_time = strtod((char *)content, (char **)&end);
+            xmlFree(content);
         }
 
         if ((!xmlStrcmp(node->name, (const xmlChar *)"DistanceMeters")) && (node->ns == ns))
@@ -92,6 +95,7 @@ parse_lap(xmlDocPtr document, xmlNsPtr ns, xmlNodePtr node)
             char * end = NULL;
             xmlChar * content = xmlNodeListGetString(document, node->xmlChildrenNode, 1);
             lap->distance = strtod((char *)content, (char **)&end);
+            xmlFree(content);
         }
 
         if ((!xmlStrcmp(node->name, (const xmlChar *)"MaximumSpeed")) && (node->ns == ns))
@@ -99,30 +103,35 @@ parse_lap(xmlDocPtr document, xmlNsPtr ns, xmlNodePtr node)
             char * end = NULL;
             xmlChar * content = xmlNodeListGetString(document, node->xmlChildrenNode, 1);
             lap->speed_maximum = strtod((char *)content, (char **)&end);
+            xmlFree(content);
         }
 
         if ((!xmlStrcmp(node->name, (const xmlChar *)"Calories")) && (node->ns == ns))
         {
             xmlChar * content = xmlNodeListGetString(document, node->xmlChildrenNode, 1);
             lap->calories = atoi((char *)content);
+            xmlFree(content);
         }
 
         if ((!xmlStrcmp(node->name, (const xmlChar *)"AverageHeartRateBpm/Value")) && (node->ns == ns))
         {
             xmlChar * content = xmlNodeListGetString(document, node->xmlChildrenNode, 1);
             lap->heart_rate_average = atoi((char *)content);
+            xmlFree(content);
         }
 
         if ((!xmlStrcmp(node->name, (const xmlChar *)"MaximumHeartRateBpm")) && (node->ns == ns))
         {
             xmlChar * content = xmlNodeListGetString(document, node->xmlChildrenNode, 1);
             lap->heart_rate_maximum = atoi((char *)content);
+            xmlFree(content);
         }
 
         if ((!xmlStrcmp(node->name, (const xmlChar *)"Intensity")) && (node->ns == ns))
         {
             xmlChar * content = xmlNodeListGetString(document, node->xmlChildrenNode, 1);
-            lap->intensity = (char *)content;
+            lap->intensity = strdup((const char *)content);
+            xmlFree(content);
         }
 
         node = node->next;
@@ -142,6 +151,7 @@ parse_trackpoint_coordinates(trackpoint_t * trackpoint, xmlDocPtr document, xmlN
             char * end;
             xmlChar * content = xmlNodeListGetString(document, node->xmlChildrenNode, 1);
             trackpoint->latitude = strtod((char *)content, (char **)&end);
+            xmlFree(content);
         }
 
         if ((!xmlStrcmp(node->name, (const xmlChar *)"LongitudeDegrees")) && (node->ns == ns))
@@ -149,6 +159,7 @@ parse_trackpoint_coordinates(trackpoint_t * trackpoint, xmlDocPtr document, xmlN
             char * end;
             xmlChar * content = xmlNodeListGetString(document, node->xmlChildrenNode, 1);
             trackpoint->longitude = strtod((char *)content, (char **)&end);
+            xmlFree(content);
         }
 
         node = node->next;
@@ -165,6 +176,7 @@ parse_trackpoint_heart_beat(trackpoint_t * trackpoint, xmlDocPtr document, xmlNs
         {
             xmlChar * content = xmlNodeListGetString(document, node->xmlChildrenNode, 1);
             trackpoint->heart_rate = atoi((char *)content);
+            xmlFree(content);
         }
 
         node = node->next;
@@ -199,6 +211,7 @@ parse_trackpoint_extensions_speed(trackpoint_t * trackpoint, xmlDocPtr document,
             char * end;
             xmlChar * content = xmlNodeListGetString(document, node->xmlChildrenNode, 1);
             trackpoint->speed = strtod((char *)content, (char **)&end);
+            xmlFree(content);
         }
 
         node = node->next;
@@ -215,7 +228,8 @@ parse_trackpoint(xmlDocPtr document, xmlNsPtr ns, xmlNodePtr node)
         if ((!xmlStrcmp(node->name, (const xmlChar *)"Time")) && (node->ns == ns))
         {
             xmlChar * content = xmlNodeListGetString(document, node->xmlChildrenNode, 1);
-            trackpoint->time = (char *)content;
+            trackpoint->time = strdup((const char *)content);
+            xmlFree(content);
         }
 
         if ((!xmlStrcmp(node->name, (const xmlChar *)"Position")) && (node->ns == ns))
@@ -228,6 +242,7 @@ parse_trackpoint(xmlDocPtr document, xmlNsPtr ns, xmlNodePtr node)
             char * end;
             xmlChar * content = xmlNodeListGetString(document, node->xmlChildrenNode, 1);
             trackpoint->elevation = strtod((char *)content, (char **)&end);
+            xmlFree(content);
         }
 
         if ((!xmlStrcmp(node->name, (const xmlChar *)"DistanceMeters")) && (node->ns == ns))
@@ -235,6 +250,7 @@ parse_trackpoint(xmlDocPtr document, xmlNsPtr ns, xmlNodePtr node)
             char * end;
             xmlChar * content = xmlNodeListGetString(document, node->xmlChildrenNode, 1);
             trackpoint->distance = strtod((char *)content, (char **)&end);
+            xmlFree(content);
         }
 
         if ((!xmlStrcmp(node->name, (const xmlChar *)"HeartRateBpm")) && (node->ns == ns))
@@ -246,6 +262,7 @@ parse_trackpoint(xmlDocPtr document, xmlNsPtr ns, xmlNodePtr node)
         {
             xmlChar * content = xmlNodeListGetString(document, node->xmlChildrenNode, 1);
             trackpoint->cadence = atoi((char *)content);
+            xmlFree(content);
         }
 
         if ((!xmlStrcmp(node->name, (const xmlChar *)"Extensions")) && (node->ns == ns))
@@ -442,10 +459,6 @@ main(int argc, char const * argv[])
     xmlXPathFreeContext(context);
     xmlFreeDoc(document);
     xmlCleanupParser();
-
-    free(trackpoint_current);
-    free(track_current);
-    free(lap_current);
 
     free(tcx->activity->laps->tracks->trackpoints);
     free(tcx->activity->laps->tracks);
