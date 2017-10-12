@@ -6,134 +6,326 @@
 #include <libxml/xpath.h>
 #include <libxml/xpathInternals.h>
 
-int parse_element_to_i(char * element, xmlXPathContextPtr context);
-double parse_element_to_f(char * element, xmlXPathContextPtr context);
-char * parse_element_to_s(char * element, xmlXPathContextPtr context);
+#include "tcx.h"
 
-typedef struct
+lap_t * lap_current = NULL;
+track_t * track_current = NULL;
+trackpoint_t * trackpoint_current = NULL;
+
+void add_lap(tcx_t * tcx, lap_t * lap);
+void add_track(tcx_t * tcx, track_t * track);
+void add_trackpoint(tcx_t * tcx, trackpoint_t * trackpoint);
+
+lap_t * parse_lap(xmlDocPtr document, xmlNsPtr ns, xmlNodePtr node);
+void parse_trackpoint_coordinates(trackpoint_t * trackpoint, xmlDocPtr document, xmlNsPtr ns, xmlNodePtr node);
+void parse_trackpoint_heart_beat(trackpoint_t * trackpoint, xmlDocPtr document, xmlNsPtr ns, xmlNodePtr node);
+void parse_trackpoint_extensions(trackpoint_t * trackpoint, xmlDocPtr document, xmlNodePtr node);
+void parse_trackpoint_extensions_speed(trackpoint_t * trackpoint, xmlDocPtr document, xmlNsPtr ns, xmlNodePtr node);
+trackpoint_t * parse_trackpoint(xmlDocPtr document, xmlNsPtr ns, xmlNodePtr node);
+
+void
+add_lap(tcx_t * tcx, lap_t * lap)
 {
-    char * time;
-    double latitude;
-    double longitude;
-    double elevation;
-    double distance;
-    int heart_rate;
-    int cadence;
-    double speed;
-    double power;
+    if (lap_current != NULL)
+    {
+        lap_current->next = lap;
+    }
+    else
+    {
+        tcx->activity->laps = lap;
+    }
 
-    struct trackpoint * next;
-} trackpoint_t;
+    lap_current = lap;
+}
 
-typedef struct
+void
+add_track(tcx_t * tcx, track_t * track)
 {
-    trackpoint_t * trackpoints;
-    struct track * next;
-} track_t;
+    if (track_current != NULL)
+    {
+        track_current->next = track;
+    }
+    else
+    {
+        lap_current->tracks = track;
+    }
 
-typedef struct
+    track_current = track;
+}
+
+void
+add_trackpoint(tcx_t * tcx, trackpoint_t * trackpoint)
 {
-    char * start_time;
-    double total_time;
-    double distance;
-    int calories;
-    double speed_average;
-    double speed_maximum;
-    int heart_rate_average;
-    int heart_rate_maximum;
-    char * intensity;
-    int cadence_average;
-    int cadence_maximum;
+    if (trackpoint_current != NULL)
+    {
+        trackpoint_current->next = trackpoint;
+    }
+    else
+    {
+        track_current->trackpoints = trackpoint;
+    }
 
-    track_t * tracks;
+    trackpoint_current = trackpoint;
+}
 
-    struct lap * next;
-} lap_t;
-
-typedef struct
+lap_t *
+parse_lap(xmlDocPtr document, xmlNsPtr ns, xmlNodePtr node)
 {
-    char * started_at;
-    char * ended_at;
-    char * total_time;
-    double latitude;
-    double longitude;
-    int total_calories;
-    double total_distance;
-    double total_elevation_gain;
-    double total_elevation_loss;
-    double speed_average;
-    double speed_maximum;
-    double speed_minimum;
-    double elevation_maximum;
-    double elevation_minimum;
-    int candence_average;
-    int cadence_maximum;
-    int cadence_minimum;
-    int heart_rate_average;
-    int heart_rate_minimum;
-    int heart_rate_maximum;
+    lap_t * lap = calloc(1, sizeof(lap_t));
 
-    lap_t * laps;
-} activity_t;
+    if (xmlHasProp(node, (xmlChar*)"StartTime"))
+    {
+        lap->start_time = (char *)xmlGetProp(node, (xmlChar *)"StartTime");
+    }
 
-typedef struct
+    node = node->xmlChildrenNode;
+    while (node != NULL) {
+        if ((!xmlStrcmp(node->name, (const xmlChar *)"TotalTimeSeconds")) && (node->ns == ns))
+        {
+            char * end = NULL;
+            xmlChar * content = xmlNodeListGetString(document, node->xmlChildrenNode, 1);
+            lap->total_time = strtod((char *)content, (char **)&end);
+        }
+
+        if ((!xmlStrcmp(node->name, (const xmlChar *)"DistanceMeters")) && (node->ns == ns))
+        {
+            char * end = NULL;
+            xmlChar * content = xmlNodeListGetString(document, node->xmlChildrenNode, 1);
+            lap->distance = strtod((char *)content, (char **)&end);
+        }
+
+        if ((!xmlStrcmp(node->name, (const xmlChar *)"MaximumSpeed")) && (node->ns == ns))
+        {
+            char * end = NULL;
+            xmlChar * content = xmlNodeListGetString(document, node->xmlChildrenNode, 1);
+            lap->speed_maximum = strtod((char *)content, (char **)&end);
+        }
+
+        if ((!xmlStrcmp(node->name, (const xmlChar *)"Calories")) && (node->ns == ns))
+        {
+            xmlChar * content = xmlNodeListGetString(document, node->xmlChildrenNode, 1);
+            lap->calories = atoi((char *)content);
+        }
+
+        if ((!xmlStrcmp(node->name, (const xmlChar *)"AverageHeartRateBpm/Value")) && (node->ns == ns))
+        {
+            xmlChar * content = xmlNodeListGetString(document, node->xmlChildrenNode, 1);
+            lap->heart_rate_average = atoi((char *)content);
+        }
+
+        if ((!xmlStrcmp(node->name, (const xmlChar *)"MaximumHeartRateBpm")) && (node->ns == ns))
+        {
+            xmlChar * content = xmlNodeListGetString(document, node->xmlChildrenNode, 1);
+            lap->heart_rate_maximum = atoi((char *)content);
+        }
+
+        if ((!xmlStrcmp(node->name, (const xmlChar *)"Intensity")) && (node->ns == ns))
+        {
+            xmlChar * content = xmlNodeListGetString(document, node->xmlChildrenNode, 1);
+            lap->intensity = (char *)content;
+        }
+
+        node = node->next;
+    }
+
+    return lap;
+}
+
+void
+parse_trackpoint_coordinates(trackpoint_t * trackpoint, xmlDocPtr document, xmlNsPtr ns, xmlNodePtr node)
 {
-    char * filename;
+    node = node->xmlChildrenNode;
+    while (node != NULL)
+    {
+        if ((!xmlStrcmp(node->name, (const xmlChar *)"LatitudeDegrees")) && (node->ns == ns))
+        {
+            char * end;
+            xmlChar * content = xmlNodeListGetString(document, node->xmlChildrenNode, 1);
+            trackpoint->latitude = strtod((char *)content, (char **)&end);
+        }
 
-    activity_t * activity;
-} tcx_t;
+        if ((!xmlStrcmp(node->name, (const xmlChar *)"LongitudeDegrees")) && (node->ns == ns))
+        {
+            char * end;
+            xmlChar * content = xmlNodeListGetString(document, node->xmlChildrenNode, 1);
+            trackpoint->longitude = strtod((char *)content, (char **)&end);
+        }
+
+        node = node->next;
+    }
+}
+
+void
+parse_trackpoint_heart_beat(trackpoint_t * trackpoint, xmlDocPtr document, xmlNsPtr ns, xmlNodePtr node)
+{
+    node = node->xmlChildrenNode;
+    while (node != NULL)
+    {
+        if ((!xmlStrcmp(node->name, (const xmlChar *)"Value")) && (node->ns == ns))
+        {
+            xmlChar * content = xmlNodeListGetString(document, node->xmlChildrenNode, 1);
+            trackpoint->heart_rate = atoi((char *)content);
+        }
+
+        node = node->next;
+    }
+}
+
+void
+parse_trackpoint_extensions(trackpoint_t * trackpoint, xmlDocPtr document, xmlNodePtr node)
+{
+    xmlNsPtr ns = xmlSearchNsByHref(document, node, (const xmlChar *)"http://www.garmin.com/xmlschemas/ActivityExtension/v2");
+
+    node = node->xmlChildrenNode;
+    while (node != NULL)
+    {
+        if (!xmlStrcmp(node->name, (const xmlChar *)"TPX"))
+        {
+            parse_trackpoint_extensions_speed(trackpoint, document, ns, node);
+        }
+
+        node = node->next;
+    }
+}
+
+void
+parse_trackpoint_extensions_speed(trackpoint_t * trackpoint, xmlDocPtr document, xmlNsPtr ns, xmlNodePtr node)
+{
+    node = node->xmlChildrenNode;
+    while (node != NULL)
+    {
+        if (!xmlStrcmp(node->name, (const xmlChar *)"Speed"))
+        {
+            char * end;
+            xmlChar * content = xmlNodeListGetString(document, node->xmlChildrenNode, 1);
+            trackpoint->speed = strtod((char *)content, (char **)&end);
+        }
+
+        node = node->next;
+    }
+}
+
+trackpoint_t *
+parse_trackpoint(xmlDocPtr document, xmlNsPtr ns, xmlNodePtr node)
+{
+    trackpoint_t * trackpoint = calloc(1, sizeof(trackpoint_t));
+
+    node = node->xmlChildrenNode;
+    while (node != NULL) {
+        if ((!xmlStrcmp(node->name, (const xmlChar *)"Time")) && (node->ns == ns))
+        {
+            xmlChar * content = xmlNodeListGetString(document, node->xmlChildrenNode, 1);
+            trackpoint->time = (char *)content;
+        }
+
+        if ((!xmlStrcmp(node->name, (const xmlChar *)"Position")) && (node->ns == ns))
+        {
+            parse_trackpoint_coordinates(trackpoint, document, ns, node);
+        }
+
+        if ((!xmlStrcmp(node->name, (const xmlChar *)"AltitudeMeters")) && (node->ns == ns))
+        {
+            char * end;
+            xmlChar * content = xmlNodeListGetString(document, node->xmlChildrenNode, 1);
+            trackpoint->elevation = strtod((char *)content, (char **)&end);
+        }
+
+        if ((!xmlStrcmp(node->name, (const xmlChar *)"DistanceMeters")) && (node->ns == ns))
+        {
+            char * end;
+            xmlChar * content = xmlNodeListGetString(document, node->xmlChildrenNode, 1);
+            trackpoint->distance = strtod((char *)content, (char **)&end);
+        }
+
+        if ((!xmlStrcmp(node->name, (const xmlChar *)"HeartRateBpm")) && (node->ns == ns))
+        {
+            parse_trackpoint_heart_beat(trackpoint, document, ns, node);
+        }
+
+        if ((!xmlStrcmp(node->name, (const xmlChar *)"Cadence")) && (node->ns == ns))
+        {
+            xmlChar * content = xmlNodeListGetString(document, node->xmlChildrenNode, 1);
+            trackpoint->cadence = atoi((char *)content);
+        }
+
+        if ((!xmlStrcmp(node->name, (const xmlChar *)"Extensions")) && (node->ns == ns))
+        {
+            parse_trackpoint_extensions(trackpoint, document, node);
+        }
+
+        node = node->next;
+    }
+
+    return trackpoint;
+}
+
+void
+print_lap(lap_t * lap)
+{
+    printf("lap                 :\n");
+    printf("  start_time        : %s\n", lap->start_time);
+    printf("  total_time        : %.2f\n", lap->total_time);
+    printf("  distance          : %.2f\n", lap->distance);
+    printf("  calories          : %d\n", lap->calories);
+    printf("  speed_average     : %.2f\n", lap->speed_average);
+    printf("  speed_maximum     : %.2f\n", lap->speed_maximum);
+    printf("  heart_rate_average: %d\n", lap->heart_rate_average);
+    printf("  heart_rate_maximum: %d\n", lap->heart_rate_maximum);
+    printf("  intensity         : %s\n", lap->intensity);
+    printf("  cadence_average   : %d\n", lap->cadence_average);
+    printf("  cadence_maximum   : %d\n", lap->cadence_maximum);
+}
+
+void
+print_trackpoint(trackpoint_t * trackpoint)
+{
+    printf("trackpoint  :\n");
+    printf("  time      : %s\n", trackpoint->time);
+    printf("  latitude  : %.6f\n", trackpoint->latitude);
+    printf("  longitude : %.6f\n", trackpoint->longitude);
+    printf("  elevation : %.2f\n", trackpoint->elevation);
+    printf("  distance  : %.2f\n", trackpoint->distance);
+    printf("  heart_rate: %d\n", trackpoint->heart_rate);
+    printf("  cadence   : %d\n", trackpoint->cadence);
+    printf("  speed     : %.2f\n", trackpoint->speed);
+    printf("  power     : %d\n", trackpoint->power);
+}
+
+void
+print_tcx(tcx_t * tcx)
+{
+    lap_t * lap = calloc(1, sizeof(lap_t));
+    track_t * track = calloc(1, sizeof(track_t));
+    trackpoint_t * trackpoint = calloc(1, sizeof(trackpoint_t));
+
+    lap = tcx->activity->laps;
+    while (lap != NULL)
+    {
+        print_lap(lap);
+
+        track = lap->tracks;
+        while (track != NULL)
+        {
+            trackpoint = track->trackpoints;
+            while (trackpoint != NULL)
+            {
+                print_trackpoint(trackpoint);
+                trackpoint = trackpoint->next;
+            }
+
+            track = track->next;
+        }
+
+        lap = lap->next;
+    }
+
+    free(lap);
+    free(track);
+    free(trackpoint);
+}
 
 int
-parse_element_to_i(char * element, xmlXPathContextPtr context)
-{
-    int value = 0;
-
-    xmlXPathObjectPtr expr = xmlXPathEvalExpression((xmlChar *)element, context);
-    if (expr != NULL)
-    {
-        xmlChar * content = expr->nodesetval->nodeTab[0]->content;
-        value = atoi((char *)content);
-        xmlXPathFreeObject(expr);
-    }
-
-    return value;
-}
-
-double
-parse_element_to_f(char * element, xmlXPathContextPtr context)
-{
-    double value = 0.0;
-
-    xmlXPathObjectPtr expr = xmlXPathEvalExpression((xmlChar *)element, context);
-    if (expr != NULL)
-    {
-        char * end = NULL;
-        xmlChar * content = expr->nodesetval->nodeTab[0]->content;
-        value = strtod((char *)content, (char **)&end);
-        xmlXPathFreeObject(expr);
-    }
-
-    return value;
-}
-
-char *
-parse_element_to_s(char * element, xmlXPathContextPtr context)
-{
-    char * value = 0;
-
-    xmlXPathObjectPtr expr = xmlXPathEvalExpression((xmlChar *)element, context);
-    if (expr != NULL)
-    {
-        xmlChar * content = expr->nodesetval->nodeTab[0]->content;
-        value = (char *)content;
-        xmlXPathFreeObject(expr);
-    }
-
-    return value;
-}
-
-int
-main(int argc, char * argv[])
+main(int argc, char const * argv[])
 {
     tcx_t * tcx = calloc(1, sizeof(tcx_t));
 
@@ -155,6 +347,8 @@ main(int argc, char * argv[])
         return 1;
     }
 
+    xmlInitParser();
+
     xmlDocPtr document = xmlReadFile(tcx->filename, NULL, 0);
     if (document == NULL)
     {
@@ -165,7 +359,6 @@ main(int argc, char * argv[])
 
     xmlXPathContextPtr context = xmlXPathNewContext(document);
     xmlXPathRegisterNs(context, (xmlChar *)"tcx", (xmlChar *)"http://www.garmin.com/xmlschemas/TrainingCenterDatabase/v2");
-
     xmlXPathObjectPtr activity = xmlXPathEvalExpression((xmlChar *)"//tcx:Activity", context);
     if (activity == NULL || xmlXPathNodeSetIsEmpty(activity->nodesetval))
     {
@@ -177,29 +370,85 @@ main(int argc, char * argv[])
     }
 
     tcx->activity = calloc(1, sizeof(activity_t));
-    xmlNodeSetPtr lap_nodes = activity->nodesetval;
-    tcx->activity->laps = calloc(lap_nodes->nodeNr, sizeof(lap_t));
 
-    for (int i = 0; i < lap_nodes->nodeNr; i++)
+    xmlXPathObjectPtr laps = xmlXPathEvalExpression((xmlChar*)"//tcx:Lap", context);
+    if (laps != 0 && !xmlXPathNodeSetIsEmpty(laps->nodesetval))
     {
-        if (lap_nodes->nodeTab[i]->type != XML_ELEMENT_NODE)
+        xmlNodeSetPtr lap_nodes = laps->nodesetval;
+        for (int i = 0; i < lap_nodes->nodeNr; i++)
         {
-            continue;
-        }
+            if (lap_nodes->nodeTab[i]->type != XML_ELEMENT_NODE)
+            {
+                continue;
+            }
 
-        tcx->activity->laps[i].total_time = parse_element_to_f("//tcx:TotalTimeSeconds/text()", context);
-        tcx->activity->laps[i].distance = parse_element_to_f("//tcx:DistanceMeters/text()", context);
-        tcx->activity->laps[i].calories = parse_element_to_i("//tcx:Calories/text()", context);
-        tcx->activity->laps[i].heart_rate_average = parse_element_to_i("//tcx:AverageHeartRateBpm/tcx:Value/text()", context);
-        tcx->activity->laps[i].heart_rate_maximum = parse_element_to_i("//tcx:MaximumHeartRateBpm/tcx:Value/text()", context);
-        tcx->activity->laps[i].intensity = parse_element_to_s("//tcx:Intensity/text()", context);
+            lap_t * lap = parse_lap(document, lap_nodes->nodeTab[i]->ns, lap_nodes->nodeTab[i]);
+            add_lap(tcx, lap);
+
+            xmlXPathObjectPtr tracks = xmlXPathEvalExpression((xmlChar*)"//tcx:Track", context);
+            if (tracks != 0 && !xmlXPathNodeSetIsEmpty(tracks->nodesetval))
+            {
+                xmlNodeSetPtr track_nodes = tracks->nodesetval;
+                for (int j = 0; j < track_nodes->nodeNr; j++)
+                {
+                    if (track_nodes->nodeTab[j]->type != XML_ELEMENT_NODE)
+                    {
+                        continue;
+                    }
+
+                    track_t * track = calloc(1, sizeof(track_t));
+                    add_track(tcx, track);
+
+                    xmlXPathObjectPtr trackpoints = xmlXPathEvalExpression((xmlChar *)"//tcx:Trackpoint", context);
+                    if (trackpoints != 0 && !xmlXPathNodeSetIsEmpty(trackpoints->nodesetval))
+                    {
+                        xmlNodeSetPtr trackpoint_nodes = trackpoints->nodesetval;
+                        for (int k = 0; k < trackpoint_nodes->nodeNr; k++)
+                        {
+                            if (trackpoint_nodes->nodeTab[k]->type != XML_ELEMENT_NODE)
+                            {
+                                continue;
+                            }
+
+                            trackpoint_t * trackpoint = parse_trackpoint(document, trackpoint_nodes->nodeTab[k]->ns, trackpoint_nodes->nodeTab[k]);
+                            add_trackpoint(tcx, trackpoint);
+                        }
+                    }
+
+                    if (trackpoints != NULL)
+                    {
+                        xmlXPathFreeObject(trackpoints);
+                    }
+                }
+
+                if (tracks != NULL)
+                {
+                    xmlXPathFreeObject(tracks);
+                }
+            }
+        }
     }
 
-    xmlXPathFreeObject(activity);
+    if (laps != NULL)
+    {
+        xmlXPathFreeObject(laps);
+    }
+
+    if (activity != NULL)
+    {
+        xmlXPathFreeObject(activity);
+    }
+
     xmlXPathFreeContext(context);
     xmlFreeDoc(document);
     xmlCleanupParser();
 
+    free(trackpoint_current);
+    free(track_current);
+    free(lap_current);
+
+    free(tcx->activity->laps->tracks->trackpoints);
+    free(tcx->activity->laps->tracks);
     free(tcx->activity->laps);
     free(tcx->activity);
     free(tcx->filename);
