@@ -23,6 +23,10 @@ void parse_trackpoint_extensions(trackpoint_t * trackpoint, xmlDocPtr document, 
 void parse_trackpoint_extensions_speed(trackpoint_t * trackpoint, xmlDocPtr document, xmlNsPtr ns, xmlNodePtr node);
 trackpoint_t * parse_trackpoint(xmlDocPtr document, xmlNsPtr ns, xmlNodePtr node);
 
+void print_lap(lap_t * lap);
+void print_trackpoint(trackpoint_t * trackpoint_t);
+void print_tcx(tcx_t * tcx);
+
 void
 add_lap(tcx_t * tcx, lap_t * lap)
 {
@@ -275,6 +279,7 @@ parse_trackpoint(xmlDocPtr document, xmlNsPtr ns, xmlNodePtr node)
 
     return trackpoint;
 }
+
 
 void
 print_lap(lap_t * lap)
