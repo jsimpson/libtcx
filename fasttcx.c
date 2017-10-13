@@ -20,7 +20,7 @@ lap_t * parse_lap(xmlDocPtr document, xmlNsPtr ns, xmlNodePtr node);
 void parse_trackpoint_coordinates(trackpoint_t * trackpoint, xmlDocPtr document, xmlNsPtr ns, xmlNodePtr node);
 void parse_trackpoint_heart_beat(trackpoint_t * trackpoint, xmlDocPtr document, xmlNsPtr ns, xmlNodePtr node);
 void parse_trackpoint_extensions(trackpoint_t * trackpoint, xmlDocPtr document, xmlNodePtr node);
-void parse_trackpoint_extensions_speed(trackpoint_t * trackpoint, xmlDocPtr document, xmlNsPtr ns, xmlNodePtr node);
+void parse_trackpoint_extensions_speed(trackpoint_t * trackpoint, xmlDocPtr document, xmlNodePtr node);
 trackpoint_t * parse_trackpoint(xmlDocPtr document, xmlNsPtr ns, xmlNodePtr node);
 
 void print_lap(lap_t * lap);
@@ -190,14 +190,12 @@ parse_trackpoint_heart_beat(trackpoint_t * trackpoint, xmlDocPtr document, xmlNs
 void
 parse_trackpoint_extensions(trackpoint_t * trackpoint, xmlDocPtr document, xmlNodePtr node)
 {
-    xmlNsPtr ns = xmlSearchNsByHref(document, node, (const xmlChar *)"http://www.garmin.com/xmlschemas/ActivityExtension/v2");
-
     node = node->xmlChildrenNode;
     while (node != NULL)
     {
         if (!xmlStrcmp(node->name, (const xmlChar *)"TPX"))
         {
-            parse_trackpoint_extensions_speed(trackpoint, document, ns, node);
+            parse_trackpoint_extensions_speed(trackpoint, document, node);
         }
 
         node = node->next;
@@ -205,7 +203,7 @@ parse_trackpoint_extensions(trackpoint_t * trackpoint, xmlDocPtr document, xmlNo
 }
 
 void
-parse_trackpoint_extensions_speed(trackpoint_t * trackpoint, xmlDocPtr document, xmlNsPtr ns, xmlNodePtr node)
+parse_trackpoint_extensions_speed(trackpoint_t * trackpoint, xmlDocPtr document, xmlNodePtr node)
 {
     node = node->xmlChildrenNode;
     while (node != NULL)
