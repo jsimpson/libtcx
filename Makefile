@@ -5,7 +5,7 @@ LDFLAGS=-lxml2
 all: fasttcx
 
 fasttcx:
-	$(CC) $(CFLAGS) fasttcx.c tcx.c utils.c -o fasttcx $^ $(LDFLAGS)
+	$(CC) $(CFLAGS) fasttcx.c tcx.c parsing_utils.c printing.c -o fasttcx $^ $(LDFLAGS)
 
 clean:
 	rm fasttcx
