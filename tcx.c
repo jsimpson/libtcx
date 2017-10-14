@@ -63,6 +63,7 @@ add_track(track_t * track)
 void
 add_trackpoint(trackpoint_t * trackpoint)
 {
+    current_activity->num_trackpoints++;
     current_lap->num_trackpoints++;
     current_track->num_trackpoints++;
 

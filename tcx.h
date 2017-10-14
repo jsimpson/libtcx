@@ -47,6 +47,7 @@ typedef struct lap
 
 typedef struct activity
 {
+    int num_trackpoints;
     int num_laps;
     char * started_at;
     char * ended_at;
@@ -82,10 +83,5 @@ void add_activity(tcx_t * tcx, activity_t * activity);
 void add_lap(lap_t * lap);
 void add_track(track_t * track);
 void add_trackpoint(trackpoint_t * trackpoint);
-
-extern activity_t * current_activity;
-extern lap_t * current_lap;
-extern track_t * current_track;
-extern trackpoint_t * current_trackpoint;
 
 #endif /* TCX_H_ */
