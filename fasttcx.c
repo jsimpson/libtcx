@@ -23,9 +23,30 @@ calculate_summary(tcx_t * tcx)
     activity = tcx->activities;
     while (activity != NULL)
     {
+        activity->cadence_maximum = INT_MIN;
+        activity->cadence_minimum = INT_MAX;
+
+        activity->heart_rate_maximum = INT_MIN;
+        activity->heart_rate_minimum = INT_MAX;
+
+        activity->speed_maximum = INT_MIN * 1.0;
+        activity->speed_minimum = INT_MAX * 1.0;
+
+        activity->elevation_maximum = INT_MIN * 1.0;
+        activity->elevation_minimum = INT_MAX * 1.0;
+
         lap = activity->laps;
         while (lap != NULL)
         {
+            lap->cadence_maximum = INT_MIN;
+            lap->cadence_minimum = INT_MAX;
+
+            lap->heart_rate_maximum = INT_MIN;
+            lap->heart_rate_minimum = INT_MAX;
+
+            lap->speed_maximum = INT_MIN * 1.0;
+            lap->speed_minimum = INT_MAX * 1.0;
+
             track = lap->tracks;
             while (track != NULL)
             {
@@ -42,6 +63,16 @@ calculate_summary(tcx_t * tcx)
                         lap->cadence_minimum = trackpoint->cadence;
                     }
 
+                    if (trackpoint->elevation > activity->elevation_maximum)
+                    {
+                        activity->elevation_maximum = trackpoint->elevation;
+                    }
+
+                    if (trackpoint->heart_rate < activity->elevation_minimum)
+                    {
+                        activity->elevation_minimum = trackpoint->elevation;
+                    }
+
                     if (trackpoint->heart_rate > lap->heart_rate_maximum)
                     {
                         lap->heart_rate_maximum = trackpoint->heart_rate;
@@ -50,6 +81,16 @@ calculate_summary(tcx_t * tcx)
                     if (trackpoint->heart_rate < lap->heart_rate_minimum)
                     {
                         lap->heart_rate_minimum = trackpoint->heart_rate;
+                    }
+
+                    if (trackpoint->heart_rate > activity->heart_rate_maximum)
+                    {
+                        activity->heart_rate_maximum = trackpoint->heart_rate;
+                    }
+
+                    if (trackpoint->heart_rate < activity->heart_rate_minimum)
+                    {
+                        activity->heart_rate_minimum = trackpoint->heart_rate;
                     }
 
                     if (trackpoint->speed > lap->speed_maximum)
@@ -62,9 +103,23 @@ calculate_summary(tcx_t * tcx)
                         lap->speed_minimum = trackpoint->speed;
                     }
 
+                    if (trackpoint->speed > activity->speed_maximum)
+                    {
+                        activity->speed_maximum = trackpoint->speed;
+                    }
+
+                    if (trackpoint->speed < activity->speed_minimum)
+                    {
+                        activity->speed_minimum = trackpoint->speed;
+                    }
+
                     lap->cadence_average += trackpoint->cadence;
                     lap->heart_rate_average += trackpoint->heart_rate;
                     lap->speed_average += trackpoint->speed;
+
+                    activity->cadence_average += trackpoint->cadence;
+                    activity->heart_rate_average += trackpoint->heart_rate;
+                    activity->speed_average += trackpoint->speed;
 
                     trackpoint = trackpoint->next;
                 }
@@ -73,11 +128,25 @@ calculate_summary(tcx_t * tcx)
                 lap->heart_rate_average /= lap->num_trackpoints;
                 lap->speed_average /= lap->num_trackpoints;
 
+                if (lap->cadence_maximum == INT_MIN) lap->cadence_maximum = 0;
+                if (lap->cadence_minimum == INT_MAX) lap->cadence_minimum = 0;
+                if (lap->heart_rate_maximum == INT_MIN) lap->heart_rate_maximum = 0;
+                if (lap->heart_rate_minimum == INT_MAX) lap->heart_rate_minimum = 0;
+                if (lap->speed_maximum == INT_MIN) lap->speed_maximum = 0.0;
+                if (lap->speed_minimum == INT_MAX) lap->speed_minimum = 0.0;
+
                 track = track->next;
             }
 
+            activity->total_calories += lap->calories;
+            activity->total_distance += lap->distance;
+
             lap = lap->next;
         }
+
+        activity->cadence_average /= activity->num_trackpoints;
+        activity->heart_rate_average /= activity->num_trackpoints;
+        activity->speed_average /= activity->num_trackpoints;
 
         activity = activity->next;
     }
