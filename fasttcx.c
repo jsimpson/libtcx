@@ -291,32 +291,20 @@ main(int argc, char const * argv[])
 
     if (activities != 0 && !xmlXPathNodeSetIsEmpty(activities->nodesetval))
     {
-        xmlNodeSetPtr activity_nodeset = activities->nodesetval;
-        for (int i = 0; i < activity_nodeset->nodeNr; i++)
+        for (int i = 0; i < activities->nodesetval->nodeNr; i++)
         {
-            if (activity_nodeset->nodeTab[i]->type != XML_ELEMENT_NODE)
-            {
-                continue;
-            }
-
             activity_t * activity = calloc(1, sizeof(activity_t));
             add_activity(tcx, activity);
 
-            xmlXPathObjectPtr laps = xmlXPathEvalExpression((xmlChar *)"//tcx:Lap", context);
-            if (laps != 0 && !xmlXPathNodeSetIsEmpty(laps->nodesetval))
+            xmlNodePtr laps = activities->nodesetval->nodeTab[i]->xmlChildrenNode;
+            while (laps != NULL)
             {
-                xmlNodeSetPtr lap_nodeset = laps->nodesetval;
-                for (int j = 0; j < lap_nodeset->nodeNr; j++)
+                if (!xmlStrcmp(laps->name, (const xmlChar *)"Lap"))
                 {
-                    if (lap_nodeset->nodeTab[j]->type != XML_ELEMENT_NODE)
-                    {
-                        continue;
-                    }
-
-                    lap_t * lap = parse_lap(document, lap_nodeset->nodeTab[j]->ns, lap_nodeset->nodeTab[j]);
+                    lap_t * lap = parse_lap(document, laps->ns, laps);
                     add_lap(lap);
 
-                    xmlNodePtr tracks = lap_nodeset->nodeTab[j]->xmlChildrenNode;
+                    xmlNodePtr tracks = laps->xmlChildrenNode;
                     while (tracks != NULL)
                     {
                         if (!xmlStrcmp(tracks->name, (const xmlChar *)"Track"))
@@ -350,11 +338,13 @@ main(int argc, char const * argv[])
                         xmlFree(tracks);
                     }
                 }
+
+                laps = laps->next;
             }
 
             if (laps != NULL)
             {
-                xmlXPathFreeObject(laps);
+                xmlFree(laps);
             }
         }
     }
