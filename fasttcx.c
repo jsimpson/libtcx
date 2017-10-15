@@ -262,6 +262,7 @@ main(int argc, char const * argv[])
     if (access(tcx->filename, F_OK) != 0)
     {
         fprintf(stderr, "Unable to locate %s.\n", tcx->filename);
+        free(tcx->filename);
         free(tcx);
         return 1;
     }
@@ -272,6 +273,7 @@ main(int argc, char const * argv[])
     if (document == NULL)
     {
         fprintf(stderr, "Could not parse %s.\n", tcx->filename);
+        free(tcx->filename);
         free(tcx);
         return 1;
     }
@@ -280,16 +282,17 @@ main(int argc, char const * argv[])
     xmlXPathRegisterNs(context, (xmlChar *)"tcx", (xmlChar *)"http://www.garmin.com/xmlschemas/TrainingCenterDatabase/v2");
 
     xmlXPathObjectPtr activities = xmlXPathEvalExpression((xmlChar *)"//tcx:Activity", context);
-    if (activities == NULL || xmlXPathNodeSetIsEmpty(activities->nodesetval))
+    if (activities == NULL || activities == 0 || xmlXPathNodeSetIsEmpty(activities->nodesetval))
     {
         printf("No activities found in \"%s\"\n", tcx->filename);
+        xmlXPathFreeContext(context);
         xmlFreeDoc(document);
         xmlCleanupParser();
+        free(tcx->filename);
         free(tcx);
         return 1;
     }
-
-    if (activities != 0 && !xmlXPathNodeSetIsEmpty(activities->nodesetval))
+    else
     {
         for (int i = 0; i < activities->nodesetval->nodeNr; i++)
         {
