@@ -2,7 +2,7 @@
 #include <libxml/tree.h>
 
 #include "tcx.h"
-#include "parsing_utils.h"
+#include "parser.h"
 
 int
 xml_content_to_i(xmlDocPtr document, xmlNodePtr node)
