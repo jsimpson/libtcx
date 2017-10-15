@@ -109,7 +109,7 @@ parse_trackpoint_extensions(trackpoint_t * trackpoint, xmlDocPtr document, xmlNo
     {
         if (!xmlStrcmp(node->name, (const xmlChar *)"TPX"))
         {
-            parse_trackpoint_extensions_speed(trackpoint, document, node);
+            parse_trackpoint_extensions_power_and_speed(trackpoint, document, node);
         }
 
         node = node->next;
@@ -117,7 +117,7 @@ parse_trackpoint_extensions(trackpoint_t * trackpoint, xmlDocPtr document, xmlNo
 }
 
 void
-parse_trackpoint_extensions_speed(trackpoint_t * trackpoint, xmlDocPtr document, xmlNodePtr node)
+parse_trackpoint_extensions_power_and_speed(trackpoint_t * trackpoint, xmlDocPtr document, xmlNodePtr node)
 {
     node = node->xmlChildrenNode;
     while (node != NULL)
@@ -125,6 +125,11 @@ parse_trackpoint_extensions_speed(trackpoint_t * trackpoint, xmlDocPtr document,
         if (!xmlStrcmp(node->name, (const xmlChar *)"Speed"))
         {
             trackpoint->speed = xml_content_to_d(document, node);
+        }
+
+        if (!xmlStrcmp(node->name, (const xmlChar *)"Watts"))
+        {
+            trackpoint->power = xml_content_to_i(document, node);
         }
 
         node = node->next;
