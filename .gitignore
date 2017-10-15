@@ -47,6 +47,7 @@ fasttcx
 *.su
 *.idb
 *.pdb
+.gdb_history
 
 # Kernel Module Compile Results
 *.mod*

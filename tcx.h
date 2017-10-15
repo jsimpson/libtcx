@@ -1,6 +1,12 @@
 #ifndef TCX_H_
 #define TCX_H_
 
+typedef struct coordinates
+{
+    double latitude;
+    double longitude;
+} coordinates_t;
+
 typedef struct trackpoint
 {
     char * time;
@@ -41,6 +47,10 @@ typedef struct lap
     int cadence_average;
     int cadence_maximum;
     int cadence_minimum;
+    double elevation_maximum;
+    double elevation_minimum;
+    double total_elevation_gain;
+    double total_elevation_loss;
     track_t * tracks;
     struct lap * next;
 } lap_t;
@@ -51,7 +61,9 @@ typedef struct activity
     int num_laps;
     char * started_at;
     char * ended_at;
-    char * total_time;
+    double total_time;
+    struct coordinates * start_point;
+    struct coordinates * end_point;
     double latitude;
     double longitude;
     int total_calories;

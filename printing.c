@@ -9,9 +9,11 @@ print_activity(activity_t * activity)
     printf("activity\n");
     printf("  started_at           : %s\n", activity->started_at);
     printf("  ended_at             : %s\n", activity->ended_at);
-    printf("  total_time           : %s\n", activity->total_time);
-    printf("  latitude             : %.6f\n", activity->latitude);
-    printf("  longitude            : %.6f\n", activity->longitude);
+    printf("  total_time           : %.2f\n", activity->total_time);
+    printf("  starting latitude    : %.6f\n", activity->start_point->latitude);
+    printf("  starting longitude   : %.6f\n", activity->start_point->longitude);
+    printf("  ending latitude      : %.6f\n", activity->end_point->latitude);
+    printf("  ending longitude     : %.6f\n", activity->end_point->longitude);
     printf("  total_calories       : %d\n", activity->total_calories);
     printf("  total_distance       : %.2f\n", activity->total_distance);
     printf("  total_elevation_gain : %.2f\n", activity->total_elevation_gain);
