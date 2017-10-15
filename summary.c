@@ -80,6 +80,14 @@ calculate_summary_lap(activity_t * activity, lap_t * lap, trackpoint_t * trackpo
     {
         activity->end_point = calloc(1, sizeof(coordinates_t));
     }
+    else
+    {
+        if (trackpoint->latitude != 0.0 && trackpoint->longitude != 0.0)
+        {
+            activity->end_point->latitude = trackpoint->latitude;
+            activity->end_point->longitude = trackpoint->longitude;
+        }
+    }
 
     if (trackpoint->cadence > lap->cadence_maximum)
     {
@@ -127,8 +135,6 @@ calculate_summary_lap(activity_t * activity, lap_t * lap, trackpoint_t * trackpo
 
     activity->cadence_average += trackpoint->cadence;
     activity->ended_at = trackpoint->time;
-    activity->end_point->latitude = trackpoint->latitude;
-    activity->end_point->longitude = trackpoint->longitude;
     activity->heart_rate_average += trackpoint->heart_rate;
     activity->speed_average += trackpoint->speed;
 }
