@@ -2,7 +2,8 @@
 fasttcx
 georoute
 
-# TCX files
+# georoute files
+*.gpx
 *.tcx
 
 # Prerequisites
