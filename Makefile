@@ -5,7 +5,7 @@ LDFLAGS=-lxml2
 all: georoute
 
 georoute:
-	$(CC) $(CFLAGS) georoute.c tcx.c tcx_utils.c -o georoute $^ $(LDFLAGS)
+	$(CC) $(CFLAGS) georoute.c tcx.c -o georoute $^ $(LDFLAGS)
 
 clean:
 	rm georoute

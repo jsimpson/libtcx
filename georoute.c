@@ -3,7 +3,6 @@
 #include <string.h>
 #include <unistd.h>
 #include "tcx.h"
-#include "tcx_utils.h"
 
 int
 main(int argc, char const * argv[])
@@ -32,6 +31,7 @@ main(int argc, char const * argv[])
     if (parse_tcx_file(tcx) == 0)
     {
         calculate_summary(tcx);
+        print_activity(tcx->activities);
     }
 
     free(tcx->filename);
