@@ -91,7 +91,6 @@ typedef struct activity
 
 typedef struct
 {
-    char * filename;
     activity_t * activities;
 } tcx_t;
 
@@ -111,7 +110,7 @@ void parse_trackpoint_extensions(trackpoint_t * trackpoint, xmlDocPtr document, 
 void parse_trackpoint_extensions_power_and_speed(trackpoint_t * trackpoint, xmlDocPtr document, xmlNodePtr node);
 trackpoint_t * parse_trackpoint(xmlDocPtr document, xmlNsPtr ns, xmlNodePtr node);
 
-int parse_tcx_file(tcx_t * tcx);
+int parse_tcx_file(tcx_t * tcx, char * filename);
 
 void calculate_elevation_delta(lap_t * lap, trackpoint_t * previous_trackpoint, trackpoint_t * trackpoint);
 void calculate_summary_activity(activity_t * activity, lap_t * lap);

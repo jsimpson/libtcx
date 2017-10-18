@@ -267,14 +267,14 @@ parse_trackpoint(xmlDocPtr document, xmlNsPtr ns, xmlNodePtr node)
 }
 
 int
-parse_tcx_file(tcx_t * tcx)
+parse_tcx_file(tcx_t * tcx, char * filename)
 {
     xmlInitParser();
 
-    xmlDocPtr document = xmlReadFile(tcx->filename, NULL, 0);
+    xmlDocPtr document = xmlReadFile(filename, NULL, 0);
     if (document == NULL)
     {
-        fprintf(stderr, "Could not parse %s.\n", tcx->filename);
+        fprintf(stderr, "Could not parse %s.\n", filename);
         return 1;
     }
 
@@ -284,7 +284,7 @@ parse_tcx_file(tcx_t * tcx)
     xmlXPathObjectPtr activities = xmlXPathEvalExpression((xmlChar *)"//tcx:Activity", context);
     if (activities == NULL || activities == 0 || xmlXPathNodeSetIsEmpty(activities->nodesetval))
     {
-        printf("No activities found in \"%s\"\n", tcx->filename);
+        printf("No activities found in \"%s\"\n", filename);
         xmlXPathFreeContext(context);
         xmlFreeDoc(document);
         xmlCleanupParser();
