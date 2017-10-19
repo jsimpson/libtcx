@@ -1,5 +1,5 @@
-# georoute
-A C TCX and GPX file parser.
+# fasttcx
+A C TCX file parser.
 
 ## Development
 
@@ -16,5 +16,5 @@ sudo ln -s /usr/local/opt/libxml2/include/libxml2/libxml /usr/local/include/libx
 #### Valgrind
 
 ```sh
-valgrind --tool=memcheck --leak-check=yes --show-reachable=yes --num-callers=20 --track-fds=yes --track-origins=yes ./georoute some-tcx-file.tcx
+valgrind --tool=memcheck --leak-check=yes --show-reachable=yes --num-callers=20 --track-fds=yes --track-origins=yes ./fasttcx some-tcx-file.tcx
 ```
