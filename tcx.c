@@ -7,10 +7,10 @@
 #include <libxml/xpathInternals.h>
 #include "tcx.h"
 
-activity_t * current_activity = NULL;
-lap_t * current_lap = NULL;
-track_t * current_track = NULL;
-trackpoint_t * current_trackpoint = NULL;
+static activity_t * current_activity = NULL;
+static lap_t * current_lap = NULL;
+static track_t * current_track = NULL;
+static trackpoint_t * current_trackpoint = NULL;
 
 void
 add_activity(tcx_t * tcx, activity_t * activity)
