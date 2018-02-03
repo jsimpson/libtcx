@@ -1,5 +1,4 @@
 #include <limits.h>
-#include <float.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -513,24 +512,24 @@ calculate_summary(tcx_t * tcx)
     {
         activity->cadence_maximum = INT_MIN;
         activity->cadence_minimum = INT_MAX;
-        activity->elevation_maximum = DBL_MIN;
-        activity->elevation_minimum = DBL_MAX;
+        activity->elevation_maximum = INT_MIN * 1.0;
+        activity->elevation_minimum = INT_MAX * 1.0;
         activity->heart_rate_maximum = INT_MIN;
         activity->heart_rate_minimum = INT_MAX;
-        activity->speed_maximum = DBL_MIN;
-        activity->speed_minimum = DBL_MAX;
+        activity->speed_maximum = INT_MIN * 1.0;
+        activity->speed_minimum = INT_MAX * 1.0;
 
         lap = activity->laps;
         while (lap != NULL)
         {
             lap->cadence_maximum = INT_MIN;
             lap->cadence_minimum = INT_MAX;
-            lap->elevation_maximum = DBL_MIN;
-            lap->elevation_minimum = DBL_MAX;
+            lap->elevation_maximum = INT_MIN * 1.0;
+            lap->elevation_minimum = INT_MAX * 1.0;
             lap->heart_rate_maximum = INT_MIN;
             lap->heart_rate_minimum = INT_MAX;
-            lap->speed_maximum = DBL_MIN;
-            lap->speed_minimum = DBL_MAX;
+            lap->speed_maximum = INT_MIN * 1.0;
+            lap->speed_minimum = INT_MAX * 1.0;
 
             track = lap->tracks;
             while (track != NULL)
