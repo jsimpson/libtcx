@@ -1,8 +1,8 @@
 CC=gcc
-CFLAGS=-Wall -g -I/usr/local/opt/libxml2/include/libxml2/libxml/ -O3 -std=gnu11
+CFLAGS=-Weverything -fsanitize=address -g -I/usr/local/opt/libxml2/include/libxml2/libxml/ -O3 -std=gnu11
 LDFLAGS=-lxml2
 
-all: fasttcx
+all: fasttcx library
 
 fasttcx:
 	$(CC) $(CFLAGS) main.c tcx.c -o fasttcx $^ $(LDFLAGS)
