@@ -119,6 +119,7 @@ void calculate_summary(tcx_t * tcx);
 
 void print_activity(activity_t * activity);
 void print_lap(lap_t * lap);
+void print_track(track_t * track_t);
 void print_trackpoint(trackpoint_t * trackpoint_t);
 void print_tcx(tcx_t * tcx);
 
