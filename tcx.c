@@ -1,4 +1,5 @@
 #include <limits.h>
+#include <float.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -512,24 +513,24 @@ calculate_summary(tcx_t * tcx)
     {
         activity->cadence_maximum = INT_MIN;
         activity->cadence_minimum = INT_MAX;
-        activity->elevation_maximum = INT_MIN * 1.0;
-        activity->elevation_minimum = INT_MAX * 1.0;
+        activity->elevation_maximum = DBL_MIN;
+        activity->elevation_minimum = DBL_MAX;
         activity->heart_rate_maximum = INT_MIN;
         activity->heart_rate_minimum = INT_MAX;
-        activity->speed_maximum = INT_MIN * 1.0;
-        activity->speed_minimum = INT_MAX * 1.0;
+        activity->speed_maximum = DBL_MIN;
+        activity->speed_minimum = DBL_MAX;
 
         lap = activity->laps;
         while (lap != NULL)
         {
             lap->cadence_maximum = INT_MIN;
             lap->cadence_minimum = INT_MAX;
-            lap->elevation_maximum = INT_MIN * 1.0;
-            lap->elevation_minimum = INT_MAX * 1.0;
+            lap->elevation_maximum = DBL_MIN;
+            lap->elevation_minimum = DBL_MAX;
             lap->heart_rate_maximum = INT_MIN;
             lap->heart_rate_minimum = INT_MAX;
-            lap->speed_maximum = INT_MIN * 1.0;
-            lap->speed_minimum = INT_MAX * 1.0;
+            lap->speed_maximum = DBL_MIN;
+            lap->speed_minimum = DBL_MAX;
 
             track = lap->tracks;
             while (track != NULL)
@@ -556,8 +557,8 @@ calculate_summary(tcx_t * tcx)
                 if (lap->cadence_minimum == INT_MAX) lap->cadence_minimum = 0;
                 if (lap->heart_rate_maximum == INT_MIN) lap->heart_rate_maximum = 0;
                 if (lap->heart_rate_minimum == INT_MAX) lap->heart_rate_minimum = 0;
-                if (lap->speed_maximum == INT_MIN) lap->speed_maximum = 0.0;
-                if (lap->speed_minimum == INT_MAX) lap->speed_minimum = 0.0;
+                if (*(int *)&lap->speed_maximum == INT_MIN) lap->speed_maximum = 0.0;
+                if (*(int *)&lap->speed_minimum == INT_MAX) lap->speed_minimum = 0.0;
 
                 track = track->next;
             }
@@ -566,8 +567,8 @@ calculate_summary(tcx_t * tcx)
             if (lap->cadence_minimum == INT_MAX) lap->cadence_minimum = 0;
             if (lap->heart_rate_maximum == INT_MIN) lap->heart_rate_maximum = 0;
             if (lap->heart_rate_minimum == INT_MAX) lap->heart_rate_minimum = 0;
-            if (lap->speed_maximum == INT_MIN) lap->speed_maximum = 0.0;
-            if (lap->speed_minimum == INT_MAX) lap->speed_minimum = 0.0;
+            if (*(int *)&lap->speed_maximum == INT_MIN) lap->speed_maximum = 0.0;
+            if (*(int *)&lap->speed_minimum == INT_MAX) lap->speed_minimum = 0.0;
 
             calculate_summary_activity(activity, lap);
 
@@ -582,10 +583,10 @@ calculate_summary(tcx_t * tcx)
         if (activity->cadence_minimum == INT_MAX) activity->cadence_minimum = 0;
         if (activity->heart_rate_maximum == INT_MIN) activity->heart_rate_maximum = 0;
         if (activity->heart_rate_minimum == INT_MAX) activity->heart_rate_minimum = 0;
-        if (activity->speed_maximum == INT_MIN) activity->speed_maximum = 0.0;
-        if (activity->speed_minimum == INT_MAX) activity->speed_minimum = 0.0;
-        if (activity->elevation_maximum == INT_MIN) activity->elevation_maximum = 0.0;
-        if (activity->elevation_minimum == INT_MAX) activity-> elevation_minimum = 0.0;
+        if (*(int *)&activity->speed_maximum == INT_MIN) activity->speed_maximum = 0.0;
+        if (*(int *)&activity->speed_minimum == INT_MAX) activity->speed_minimum = 0.0;
+        if (*(int *)&activity->elevation_maximum == INT_MIN) activity->elevation_maximum = 0.0;
+        if (*(int *)&activity->elevation_minimum == INT_MAX) activity-> elevation_minimum = 0.0;
 
         activity = activity->next;
     }
