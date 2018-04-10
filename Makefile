@@ -1,6 +1,6 @@
 CC=gcc
 CFLAGS=-Wall -g -I/usr/include/libxml2/ -O3 -std=gnu11
-LDFLAGS=-lxml2
+LDFLAGS=-lxml2 -lm
 
 all: fasttcx library
 

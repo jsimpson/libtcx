@@ -1,5 +1,6 @@
-#include <limits.h>
 #include <float.h>
+#include <limits.h>
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -363,6 +364,48 @@ parse_tcx_file(tcx_t * tcx, char * filename)
     return 0;
 }
 
+double
+haversine_distance(coordinates_t * start, coordinates_t * end)
+{
+    double delta_latitude = end->latitude - start->latitude;
+    double delta_longitude = end->longitude - start->longitude;
+    double delta_latitude_rad = delta_latitude * RAD_PER_DEGREE;
+    double delta_longitude_rad = delta_longitude * RAD_PER_DEGREE;
+    double start_latitude_rad = start->latitude * RAD_PER_DEGREE;
+    double end_latitude_rad = end->latitude * RAD_PER_DEGREE;
+
+    double a = pow(sin(delta_latitude_rad / 2), 2) + cos(start_latitude_rad) * cos(end_latitude_rad) * pow(sin(delta_longitude_rad / 2), 2);
+    double c = 2 * atan2(sqrt(a), sqrt(1 - a));
+
+    return RADIUS * c;
+}
+
+void
+calculate_grade(trackpoint_t * previous_trackpoint, trackpoint_t * trackpoint)
+{
+    if ((previous_trackpoint->distance > 0.00) && (trackpoint-> distance > 0.00))
+    {
+        coordinates_t * start = calloc(1, sizeof(coordinates_t));
+        coordinates_t * end = calloc(1, sizeof(coordinates_t));
+
+        start->latitude = previous_trackpoint->latitude;
+        start->longitude = previous_trackpoint->longitude;
+        end->latitude = trackpoint->latitude;
+        end->longitude = trackpoint->longitude;
+
+        double delta = previous_trackpoint->elevation - trackpoint->elevation;
+        double distance = haversine_distance(start, end);
+        double radians = atan(delta / distance);
+
+        trackpoint->grade = 100 * radians / M_PI;
+
+        free(start);
+        free(end);
+    }
+
+    return;
+}
+
 void
 calculate_elevation_delta(lap_t * lap, trackpoint_t * previous_trackpoint, trackpoint_t * trackpoint)
 {
@@ -542,6 +585,7 @@ calculate_summary(tcx_t * tcx)
 
                     if (previous_trackpoint != NULL)
                     {
+                        calculate_grade(previous_trackpoint, trackpoint);
                         calculate_elevation_delta(lap, previous_trackpoint, trackpoint);
                     }
 
@@ -665,6 +709,7 @@ print_trackpoint(trackpoint_t * trackpoint)
     printf("  cadence   : %d\n", trackpoint->cadence);
     printf("  speed     : %.2f\n", trackpoint->speed);
     printf("  power     : %d\n", trackpoint->power);
+    printf("  grade     : %.2f\n", trackpoint->grade);
 }
 
 void

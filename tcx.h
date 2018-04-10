@@ -1,9 +1,13 @@
 #ifndef TCX_H_
 #define TCX_H_
 
+#include <math.h>
 #include <libxml/tree.h>
 #include <libxml/xpath.h>
 #include <libxml/xpathInternals.h>
+
+#define RAD_PER_DEGREE M_PI / 180.0
+#define RADIUS 6371000 // Earth's mean radius in meters
 
 typedef struct coordinates
 {
@@ -22,6 +26,7 @@ typedef struct trackpoint
     int cadence;
     double speed;
     int power;
+    double grade;
 
     struct trackpoint * next;
 } trackpoint_t;
@@ -112,6 +117,9 @@ trackpoint_t * parse_trackpoint(xmlDocPtr document, xmlNsPtr ns, xmlNodePtr node
 
 int parse_tcx_file(tcx_t * tcx, char * filename);
 
+double haversine_distance(coordinates_t * start, coordinates_t * end);
+
+void calculate_grade(trackpoint_t * previous_trackpoint, trackpoint_t * trackpoint_t);
 void calculate_elevation_delta(lap_t * lap, trackpoint_t * previous_trackpoint, trackpoint_t * trackpoint);
 void calculate_summary_activity(activity_t * activity, lap_t * lap);
 void calculate_summary_lap(activity_t * activity, lap_t * lap, trackpoint_t * trackpoint);
