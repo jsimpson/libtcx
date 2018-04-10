@@ -383,27 +383,25 @@ haversine_distance(coordinates_t * start, coordinates_t * end)
 void
 calculate_grade(trackpoint_t * previous_trackpoint, trackpoint_t * trackpoint)
 {
-    if ((previous_trackpoint->distance > 0.00) && (trackpoint-> distance > 0.00))
+    coordinates_t * start = calloc(1, sizeof(coordinates_t));
+    coordinates_t * end = calloc(1, sizeof(coordinates_t));
+
+    start->latitude = previous_trackpoint->latitude;
+    start->longitude = previous_trackpoint->longitude;
+    end->latitude = trackpoint->latitude;
+    end->longitude = trackpoint->longitude;
+
+    double elevation_delta = trackpoint->elevation - previous_trackpoint->elevation;
+    double distance_delta = haversine_distance(start, end);
+    double radians = atan(elevation_delta / distance_delta);
+
+    if (!isnan(radians))
     {
-        coordinates_t * start = calloc(1, sizeof(coordinates_t));
-        coordinates_t * end = calloc(1, sizeof(coordinates_t));
-
-        start->latitude = previous_trackpoint->latitude;
-        start->longitude = previous_trackpoint->longitude;
-        end->latitude = trackpoint->latitude;
-        end->longitude = trackpoint->longitude;
-
-        double elevation_delta = trackpoint->elevation - previous_trackpoint->elevation;
-        double distance_delta = haversine_distance(start, end);
-        double radians = atan(elevation_delta / distance_delta);
-
         trackpoint->grade = 180 * radians / M_PI;
-
-        free(start);
-        free(end);
     }
 
-    return;
+    free(start);
+    free(end);
 }
 
 void
