@@ -393,11 +393,11 @@ calculate_grade(trackpoint_t * previous_trackpoint, trackpoint_t * trackpoint)
         end->latitude = trackpoint->latitude;
         end->longitude = trackpoint->longitude;
 
-        double delta = previous_trackpoint->elevation - trackpoint->elevation;
-        double distance = haversine_distance(start, end);
-        double radians = atan(delta / distance);
+        double elevation_delta = trackpoint->elevation - previous_trackpoint->elevation;
+        double distance_delta = haversine_distance(start, end);
+        double radians = atan(elevation_delta / distance_delta);
 
-        trackpoint->grade = 100 * radians / M_PI;
+        trackpoint->grade = 180 * radians / M_PI;
 
         free(start);
         free(end);
