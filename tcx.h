@@ -124,7 +124,7 @@ double haversine_distance(coordinates_t * start, coordinates_t * end);
 
 void calculate_pace(trackpoint_t * previous_trackpoint, trackpoint_t * trackpoint);
 void calculate_grade(trackpoint_t * previous_trackpoint, trackpoint_t * trackpoint_t);
-double calculate_grade_adjusted_pace(double total_distance, track_t * track);
+void calculate_grade_adjusted_pace(lap_t * lap);
 void calculate_elevation_delta(lap_t * lap, trackpoint_t * previous_trackpoint, trackpoint_t * trackpoint);
 void calculate_summary_activity(activity_t * activity, lap_t * lap);
 void calculate_summary_lap(activity_t * activity, lap_t * lap, trackpoint_t * trackpoint);

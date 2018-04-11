@@ -441,61 +441,22 @@ calculate_grade(trackpoint_t * previous_trackpoint, trackpoint_t * trackpoint)
     }
 }
 
-double
-calculate_grade_adjusted_pace(double total_distance, track_t * track)
+/*
+ * Based on research by C.T.M. Davies:
+ * https://medium.com/strava-engineering/improving-grade-adjusted-pace-b9a2a332a5dc
+ * https://www.runnersworld.com/races/downhill-all-the-way
+ */
+#define COEFF_PER_GRADE_INCLINE 0.033 * 2
+#define COEFF_PER_GRADE_DECLINE 0.01815 * 2
+#define METERS_TO_FEET 3.28084
+
+void
+calculate_grade_adjusted_pace(lap_t * lap)
 {
-    double accumulator = 0.00;
-
-    while (track != NULL)
-    {
-        trackpoint_t * previous_trackpoint = NULL;
-        trackpoint_t * trackpoint = track->trackpoints;
-        while (trackpoint != NULL)
-        {
-            if (previous_trackpoint == NULL)
-            {
-                previous_trackpoint = trackpoint;
-            }
-            else
-            {
-                double distance = interval_distance(previous_trackpoint, trackpoint);
-                if (fabs(distance) > 10e-7)
-                {
-                    #define COEFF_PER_GRADE_INCLINE 0.033 * 2
-                    #define COEFF_PER_GRADE_DECLINE 0.01815 * 2
-                    #define INCLINE_PACE(grade, pace) (pace / (1 + COEFF_PER_GRADE_INCLINE * grade))
-                    #define DECLINE_PACE(grade, pace) (pace / (1 - COEFF_PER_GRADE_DECLINE * grade))
-
-                    if (fabs(trackpoint->grade) > 10e-7)
-                    {
-                        if (trackpoint->grade > 0.00)
-                        {
-                            accumulator +=
-                            accumulator += (distance / total_distance)
-                        }
-                        else
-                        {
-                        }
-                    }
-
-                    //accumulator += (distance / total_distance) * (trackpoint->grade > 0.00 ? (INCLINE_PACE(trackpoint->grade, trackpoint->pace)) : (DECLINE_PACE(trackpoint->grade, trackpoint->pace)));
-                }
-
-                previous_trackpoint = trackpoint;
-            }
-
-            trackpoint = trackpoint->next;
-        }
-
-        track = track->next;
-    }
-
-    #define METERS_TO_SECONDS 2.23694
-    double pace = 60.0 / (accumulator * METERS_TO_SECONDS);
-    int seconds = floor((pace - floor(pace)) * 60);
-    int minutes = floor(pace);
-
-    return accumulator;
+    double seconds = 0.00;
+    seconds += ((lap->total_elevation_gain * METERS_TO_FEET) / 100.00) * COEFF_PER_GRADE_INCLINE * lap->total_time;
+    seconds -= ((lap->total_elevation_loss * METERS_TO_FEET) / 100.00) * COEFF_PER_GRADE_DECLINE * lap->total_time;
+    lap->grade_adjusted_pace = lap->total_time + floor(seconds);
 }
 
 void
@@ -701,8 +662,7 @@ calculate_summary(tcx_t * tcx)
                 track = track->next;
             }
 
-            //lap->grade_adjusted_pace = lap->total_time *
-            calculate_grade_adjusted_pace(lap->distance, lap->tracks);
+            calculate_grade_adjusted_pace(lap);
 
             if (lap->cadence_maximum == INT_MIN) lap->cadence_maximum = 0;
             if (lap->cadence_minimum == INT_MAX) lap->cadence_minimum = 0;
@@ -784,6 +744,7 @@ print_lap(lap_t * lap)
     printf("  cadence_average    : %d\n", lap->cadence_average);
     printf("  cadence_maximum    : %d\n", lap->cadence_maximum);
     printf("  cadence_minimum    : %d\n", lap->cadence_minimum);
+    printf("  elevation          : %.2f\n", lap->total_elevation_gain - lap->total_elevation_loss);
     printf("  grade_adjusted_pace: %.2f\n", lap->grade_adjusted_pace);
 }
 
@@ -808,7 +769,7 @@ print_trackpoint(trackpoint_t * trackpoint)
     printf("  speed     : %.2f\n", trackpoint->speed);
     printf("  power     : %d\n", trackpoint->power);
     printf("  grade     : %.2f\n", trackpoint->grade);
-    //printf("  pace      : %s\n", trackpoint->pace);
+    printf("  pace      : %.2f\n", trackpoint->pace);
 }
 
 void
@@ -822,22 +783,22 @@ print_tcx(tcx_t * tcx)
     activity = tcx->activities;
     while (activity != NULL)
     {
-        //print_activity(activity);
+        print_activity(activity);
 
         lap = activity->laps;
         while (lap != NULL)
         {
-            //print_lap(lap);
+            print_lap(lap);
 
             track = lap->tracks;
             while (track != NULL)
             {
-                //print_track(track);
+                print_track(track);
 
                 trackpoint = track->trackpoints;
                 while (trackpoint != NULL)
                 {
-                    //print_trackpoint(trackpoint);
+                    print_trackpoint(trackpoint);
                     trackpoint = trackpoint->next;
                 }
 
