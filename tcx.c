@@ -9,6 +9,10 @@
 #include <libxml/xpathInternals.h>
 #include "tcx.h"
 
+#define __USE_XOPEN
+
+#include <time.h>
+
 static activity_t * current_activity = NULL;
 static lap_t * current_lap = NULL;
 static track_t * current_track = NULL;
@@ -286,7 +290,7 @@ parse_tcx_file(tcx_t * tcx, char * filename)
     xmlXPathObjectPtr activities = xmlXPathEvalExpression((xmlChar *)"//tcx:Activity", context);
     if (activities == NULL || activities == 0 || xmlXPathNodeSetIsEmpty(activities->nodesetval))
     {
-        printf("No activities found in \"%s\"\n", filename);
+        fprintf(stderr, "No activities found in \"%s\"\n", filename);
         xmlXPathFreeContext(context);
         xmlFreeDoc(document);
         xmlCleanupParser();
@@ -365,6 +369,34 @@ parse_tcx_file(tcx_t * tcx, char * filename)
 }
 
 double
+interval_distance(trackpoint_t * previous_trackpoint, trackpoint_t * trackpoint)
+{
+    double distance = 0.00;
+
+    if ((fabs(trackpoint->distance) > 10e-7) && ((fabs(previous_trackpoint->distance) > 10e-7)))
+    {
+        distance = trackpoint->distance - previous_trackpoint->distance;
+    }
+    else
+    {
+        coordinates_t * start = calloc(1, sizeof(coordinates_t));
+        coordinates_t * end = calloc(1, sizeof(coordinates_t));
+
+        start->latitude = previous_trackpoint->latitude;
+        start->longitude = previous_trackpoint->longitude;
+        end->latitude = trackpoint->latitude;
+        end->longitude = trackpoint->longitude;
+
+        distance = haversine_distance(start, end);
+
+        free(start);
+        free(end);
+    }
+
+    return distance;
+}
+
+double
 haversine_distance(coordinates_t * start, coordinates_t * end)
 {
     double delta_latitude = end->latitude - start->latitude;
@@ -381,27 +413,50 @@ haversine_distance(coordinates_t * start, coordinates_t * end)
 }
 
 void
+calculate_pace(trackpoint_t * previous_trackpoint, trackpoint_t * trackpoint)
+{
+    double distance = interval_distance(previous_trackpoint, trackpoint);
+    if (fabs(distance) > 10e-7)
+    {
+        struct tm t0 = {0}, t1 = {0};
+        strptime(previous_trackpoint->time, "%Y-%m-%dT%H:%M:%S.000Z", &t0);
+        strptime(trackpoint->time, "%Y-%m-%dT%H:%M:%S.000Z", &t1);
+
+        double time = difftime(mktime(&t1), mktime(&t0)) / 60.0;
+
+        trackpoint->pace = time / distance;
+    }
+}
+
+void
 calculate_grade(trackpoint_t * previous_trackpoint, trackpoint_t * trackpoint)
 {
-    coordinates_t * start = calloc(1, sizeof(coordinates_t));
-    coordinates_t * end = calloc(1, sizeof(coordinates_t));
+    double elevation = trackpoint->elevation - previous_trackpoint->elevation;
 
-    start->latitude = previous_trackpoint->latitude;
-    start->longitude = previous_trackpoint->longitude;
-    end->latitude = trackpoint->latitude;
-    end->longitude = trackpoint->longitude;
-
-    double elevation_delta = trackpoint->elevation - previous_trackpoint->elevation;
-    double distance_delta = haversine_distance(start, end);
-    double radians = atan(elevation_delta / distance_delta);
-
-    if (!isnan(radians))
+    double distance = interval_distance(previous_trackpoint, trackpoint);
+    if (fabs(distance) > 10e-7)
     {
+        double radians = atan(elevation / distance);
         trackpoint->grade = 180 * radians / M_PI;
     }
+}
 
-    free(start);
-    free(end);
+/*
+ * Based on research by C.T.M. Davies:
+ * https://medium.com/strava-engineering/improving-grade-adjusted-pace-b9a2a332a5dc
+ * https://www.runnersworld.com/races/downhill-all-the-way
+ */
+#define COEFF_PER_GRADE_INCLINE 0.033 * 2
+#define COEFF_PER_GRADE_DECLINE 0.01815 * 2
+#define METERS_TO_FEET 3.28084
+
+void
+calculate_grade_adjusted_pace(lap_t * lap)
+{
+    double seconds = 0.00;
+    seconds += ((lap->total_elevation_gain * METERS_TO_FEET) / 100.00) * COEFF_PER_GRADE_INCLINE * lap->total_time;
+    seconds -= ((lap->total_elevation_loss * METERS_TO_FEET) / 100.00) * COEFF_PER_GRADE_DECLINE * lap->total_time;
+    lap->grade_adjusted_pace = lap->total_time + floor(seconds);
 }
 
 void
@@ -583,6 +638,7 @@ calculate_summary(tcx_t * tcx)
 
                     if (previous_trackpoint != NULL)
                     {
+                        calculate_pace(previous_trackpoint, trackpoint);
                         calculate_grade(previous_trackpoint, trackpoint);
                         calculate_elevation_delta(lap, previous_trackpoint, trackpoint);
                     }
@@ -595,6 +651,7 @@ calculate_summary(tcx_t * tcx)
                 lap->heart_rate_average /= lap->num_trackpoints;
                 lap->speed_average /= lap->num_trackpoints;
 
+
                 if (lap->cadence_maximum == INT_MIN) lap->cadence_maximum = 0;
                 if (lap->cadence_minimum == INT_MAX) lap->cadence_minimum = 0;
                 if (lap->heart_rate_maximum == INT_MIN) lap->heart_rate_maximum = 0;
@@ -604,6 +661,8 @@ calculate_summary(tcx_t * tcx)
 
                 track = track->next;
             }
+
+            calculate_grade_adjusted_pace(lap);
 
             if (lap->cadence_maximum == INT_MIN) lap->cadence_maximum = 0;
             if (lap->cadence_minimum == INT_MAX) lap->cadence_minimum = 0;
@@ -671,20 +730,22 @@ void
 print_lap(lap_t * lap)
 {
     printf("lap\n");
-    printf("  num_tracks        : %d\n", lap->num_tracks);
-    printf("  start_time        : %s\n", lap->start_time);
-    printf("  total_time        : %.2f\n", lap->total_time);
-    printf("  distance          : %.2f\n", lap->distance);
-    printf("  calories          : %d\n", lap->calories);
-    printf("  speed_average     : %.2f\n", lap->speed_average);
-    printf("  speed_maximum     : %.2f\n", lap->speed_maximum);
-    printf("  heart_rate_average: %d\n", lap->heart_rate_average);
-    printf("  heart_rate_maximum: %d\n", lap->heart_rate_maximum);
-    printf("  heart_rate_minimum: %d\n", lap->heart_rate_minimum);
-    printf("  intensity         : %s\n", lap->intensity);
-    printf("  cadence_average   : %d\n", lap->cadence_average);
-    printf("  cadence_maximum   : %d\n", lap->cadence_maximum);
-    printf("  cadence_minimum   : %d\n", lap->cadence_minimum);
+    printf("  num_tracks         : %d\n", lap->num_tracks);
+    printf("  start_time         : %s\n", lap->start_time);
+    printf("  total_time         : %.2f\n", lap->total_time);
+    printf("  distance           : %.2f\n", lap->distance);
+    printf("  calories           : %d\n", lap->calories);
+    printf("  speed_average      : %.2f\n", lap->speed_average);
+    printf("  speed_maximum      : %.2f\n", lap->speed_maximum);
+    printf("  heart_rate_average : %d\n", lap->heart_rate_average);
+    printf("  heart_rate_maximum : %d\n", lap->heart_rate_maximum);
+    printf("  heart_rate_minimum : %d\n", lap->heart_rate_minimum);
+    printf("  intensity          : %s\n", lap->intensity);
+    printf("  cadence_average    : %d\n", lap->cadence_average);
+    printf("  cadence_maximum    : %d\n", lap->cadence_maximum);
+    printf("  cadence_minimum    : %d\n", lap->cadence_minimum);
+    printf("  elevation          : %.2f\n", lap->total_elevation_gain - lap->total_elevation_loss);
+    printf("  grade_adjusted_pace: %.2f\n", lap->grade_adjusted_pace);
 }
 
 void
@@ -708,6 +769,7 @@ print_trackpoint(trackpoint_t * trackpoint)
     printf("  speed     : %.2f\n", trackpoint->speed);
     printf("  power     : %d\n", trackpoint->power);
     printf("  grade     : %.2f\n", trackpoint->grade);
+    printf("  pace      : %.2f\n", trackpoint->pace);
 }
 
 void
