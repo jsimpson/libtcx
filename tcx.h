@@ -119,10 +119,12 @@ trackpoint_t * parse_trackpoint(xmlDocPtr document, xmlNsPtr ns, xmlNodePtr node
 
 int parse_tcx_file(tcx_t * tcx, char * filename);
 
+double interval_distance(trackpoint_t * previous_trackpoint, trackpoint_t * trackpoint);
 double haversine_distance(coordinates_t * start, coordinates_t * end);
 
+void calculate_pace(trackpoint_t * previous_trackpoint, trackpoint_t * trackpoint);
 void calculate_grade(trackpoint_t * previous_trackpoint, trackpoint_t * trackpoint_t);
-double calculate_pace(double total_distance, trackpoint_t * trackpoint);
+double calculate_grade_adjusted_pace(double total_distance, track_t * track);
 void calculate_elevation_delta(lap_t * lap, trackpoint_t * previous_trackpoint, trackpoint_t * trackpoint);
 void calculate_summary_activity(activity_t * activity, lap_t * lap);
 void calculate_summary_lap(activity_t * activity, lap_t * lap, trackpoint_t * trackpoint);

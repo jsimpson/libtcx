@@ -290,7 +290,7 @@ parse_tcx_file(tcx_t * tcx, char * filename)
     xmlXPathObjectPtr activities = xmlXPathEvalExpression((xmlChar *)"//tcx:Activity", context);
     if (activities == NULL || activities == 0 || xmlXPathNodeSetIsEmpty(activities->nodesetval))
     {
-        printf("No activities found in \"%s\"\n", filename);
+        fprintf(stderr, "No activities found in \"%s\"\n", filename);
         xmlXPathFreeContext(context);
         xmlFreeDoc(document);
         xmlCleanupParser();
@@ -369,6 +369,34 @@ parse_tcx_file(tcx_t * tcx, char * filename)
 }
 
 double
+interval_distance(trackpoint_t * previous_trackpoint, trackpoint_t * trackpoint)
+{
+    double distance = 0.00;
+
+    if ((fabs(trackpoint->distance) > 10e-7) && ((fabs(previous_trackpoint->distance) > 10e-7)))
+    {
+        distance = trackpoint->distance - previous_trackpoint->distance;
+    }
+    else
+    {
+        coordinates_t * start = calloc(1, sizeof(coordinates_t));
+        coordinates_t * end = calloc(1, sizeof(coordinates_t));
+
+        start->latitude = previous_trackpoint->latitude;
+        start->longitude = previous_trackpoint->longitude;
+        end->latitude = trackpoint->latitude;
+        end->longitude = trackpoint->longitude;
+
+        distance = haversine_distance(start, end);
+
+        free(start);
+        free(end);
+    }
+
+    return distance;
+}
+
+double
 haversine_distance(coordinates_t * start, coordinates_t * end)
 {
     double delta_latitude = end->latitude - start->latitude;
@@ -385,86 +413,87 @@ haversine_distance(coordinates_t * start, coordinates_t * end)
 }
 
 void
-calculate_grade(trackpoint_t * previous_trackpoint, trackpoint_t * trackpoint)
+calculate_pace(trackpoint_t * previous_trackpoint, trackpoint_t * trackpoint)
 {
-    coordinates_t * start = calloc(1, sizeof(coordinates_t));
-    coordinates_t * end = calloc(1, sizeof(coordinates_t));
-
-    start->latitude = previous_trackpoint->latitude;
-    start->longitude = previous_trackpoint->longitude;
-    end->latitude = trackpoint->latitude;
-    end->longitude = trackpoint->longitude;
-
-    double elevation_delta = trackpoint->elevation - previous_trackpoint->elevation;
-    double distance_delta = haversine_distance(start, end);
-    double radians = atan(elevation_delta / distance_delta);
-
-    if (!isnan(radians))
+    double distance = interval_distance(previous_trackpoint, trackpoint);
+    if (fabs(distance) > 10e-7)
     {
-        trackpoint->grade = 180 * radians / M_PI;
-    }
+        struct tm t0 = {0}, t1 = {0};
+        strptime(previous_trackpoint->time, "%Y-%m-%dT%H:%M:%S.000Z", &t0);
+        strptime(trackpoint->time, "%Y-%m-%dT%H:%M:%S.000Z", &t1);
 
-    free(start);
-    free(end);
+        double time = difftime(mktime(&t1), mktime(&t0)) / 60.0;
+
+        trackpoint->pace = time / distance;
+    }
 }
 
-/*
- * Based on research from C.T.M. Davies
- * 1: Davies, C.T.M. et al. (1974). The Physiological Responses to Running Downhill. Journal of Applied Physiology 32, 187–194.
- * 2: Davies, C.T.M. (1980). Effects of wind assistance and resistance on the forward motion of a runner. Journal of Applied Physiology 48, 702–709.
- */
-#define COEFF_PER_1_GRADE_DECLINE 0.01815
-#define COEFF_PER_1_GRADE_INCLINE 0.033
+void
+calculate_grade(trackpoint_t * previous_trackpoint, trackpoint_t * trackpoint)
+{
+    double elevation = trackpoint->elevation - previous_trackpoint->elevation;
 
-#define DECLINE_PACE(grade, pace) (pace / (1 - COEFF_PER_1_GRADE_DECLINE * grade))
-#define INCLINE_PACE(grade, pace) (pace / (1 + COEFF_PER_1_GRADE_INCLINE * grade))
+    double distance = interval_distance(previous_trackpoint, trackpoint);
+    if (fabs(distance) > 10e-7)
+    {
+        double radians = atan(elevation / distance);
+        trackpoint->grade = 180 * radians / M_PI;
+    }
+}
 
 double
-calculate_grade_adjusted_pace(double total_distance, trackpoint_t * trackpoint)
+calculate_grade_adjusted_pace(double total_distance, track_t * track)
 {
     double accumulator = 0.00;
 
-    trackpoint_t * previous_trackpoint = NULL;
-
-    while (trackpoint->next != NULL)
+    while (track != NULL)
     {
-        if (previous_trackpoint == NULL)
+        trackpoint_t * previous_trackpoint = NULL;
+        trackpoint_t * trackpoint = track->trackpoints;
+        while (trackpoint != NULL)
         {
-            previous_trackpoint = trackpoint;
+            if (previous_trackpoint == NULL)
+            {
+                previous_trackpoint = trackpoint;
+            }
+            else
+            {
+                double distance = interval_distance(previous_trackpoint, trackpoint);
+                if (fabs(distance) > 10e-7)
+                {
+                    #define COEFF_PER_GRADE_INCLINE 0.033 * 2
+                    #define COEFF_PER_GRADE_DECLINE 0.01815 * 2
+                    #define INCLINE_PACE(grade, pace) (pace / (1 + COEFF_PER_GRADE_INCLINE * grade))
+                    #define DECLINE_PACE(grade, pace) (pace / (1 - COEFF_PER_GRADE_DECLINE * grade))
+
+                    if (fabs(trackpoint->grade) > 10e-7)
+                    {
+                        if (trackpoint->grade > 0.00)
+                        {
+                            accumulator +=
+                            accumulator += (distance / total_distance)
+                        }
+                        else
+                        {
+                        }
+                    }
+
+                    //accumulator += (distance / total_distance) * (trackpoint->grade > 0.00 ? (INCLINE_PACE(trackpoint->grade, trackpoint->pace)) : (DECLINE_PACE(trackpoint->grade, trackpoint->pace)));
+                }
+
+                previous_trackpoint = trackpoint;
+            }
+
+            trackpoint = trackpoint->next;
         }
-        else
-        {
-            struct tm t0 = {0}, t1 = {0};
-            strptime(previous_trackpoint->time, "%Y-%m-%dT%H:%M:%S.000Z", &t0);
-            strptime(trackpoint->time, "%Y-%m-%dT%H:%M:%S.000Z", &t1);
 
-            double time = difftime(mktime(&t1), mktime(&t0)) / 60;
-
-            coordinates_t * p0 = calloc(1, sizeof(coordinates_t));
-            coordinates_t * p1 = calloc(1, sizeof(coordinates_t));
-
-            p0->latitude = previous_trackpoint->latitude;
-            p0->longitude = previous_trackpoint->longitude;
-            p1->latitude = trackpoint->latitude;
-            p1->longitude = trackpoint->longitude;
-
-            double distance = haversine_distance(p1, p0);
-            double elevation = trackpoint->elevation - previous_trackpoint->elevation;
-            double radians = atan(elevation / distance);
-            double grade = 180 * radians / M_PI;\
-            double pace = time / distance;
-            double weighted = distance / total_distance * (grade > 0.00 ? INCLINE_PACE(grade, pace) : DECLINE_PACE(grade, pace));
-
-            accumulator += weighted;
-
-            previous_trackpoint = trackpoint;
-
-            free(p0);
-            free(p1);
-        }
-
-        trackpoint = trackpoint->next;
+        track = track->next;
     }
+
+    #define METERS_TO_SECONDS 2.23694
+    double pace = 60.0 / (accumulator * METERS_TO_SECONDS);
+    int seconds = floor((pace - floor(pace)) * 60);
+    int minutes = floor(pace);
 
     return accumulator;
 }
@@ -648,6 +677,7 @@ calculate_summary(tcx_t * tcx)
 
                     if (previous_trackpoint != NULL)
                     {
+                        calculate_pace(previous_trackpoint, trackpoint);
                         calculate_grade(previous_trackpoint, trackpoint);
                         calculate_elevation_delta(lap, previous_trackpoint, trackpoint);
                     }
@@ -660,7 +690,6 @@ calculate_summary(tcx_t * tcx)
                 lap->heart_rate_average /= lap->num_trackpoints;
                 lap->speed_average /= lap->num_trackpoints;
 
-                lap->grade_adjusted_pace = lap->total_time * calculate_grade_adjusted_pace(lap->distance, track->trackpoints);
 
                 if (lap->cadence_maximum == INT_MIN) lap->cadence_maximum = 0;
                 if (lap->cadence_minimum == INT_MAX) lap->cadence_minimum = 0;
@@ -671,6 +700,9 @@ calculate_summary(tcx_t * tcx)
 
                 track = track->next;
             }
+
+            //lap->grade_adjusted_pace = lap->total_time *
+            calculate_grade_adjusted_pace(lap->distance, lap->tracks);
 
             if (lap->cadence_maximum == INT_MIN) lap->cadence_maximum = 0;
             if (lap->cadence_minimum == INT_MAX) lap->cadence_minimum = 0;
@@ -776,6 +808,7 @@ print_trackpoint(trackpoint_t * trackpoint)
     printf("  speed     : %.2f\n", trackpoint->speed);
     printf("  power     : %d\n", trackpoint->power);
     printf("  grade     : %.2f\n", trackpoint->grade);
+    //printf("  pace      : %s\n", trackpoint->pace);
 }
 
 void
@@ -794,7 +827,7 @@ print_tcx(tcx_t * tcx)
         lap = activity->laps;
         while (lap != NULL)
         {
-            print_lap(lap);
+            //print_lap(lap);
 
             track = lap->tracks;
             while (track != NULL)
