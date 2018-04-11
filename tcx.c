@@ -396,6 +396,9 @@ interval_distance(trackpoint_t * previous_trackpoint, trackpoint_t * trackpoint)
     return distance;
 }
 
+#define RAD_PER_DEGREE M_PI / 180.0
+#define RADIUS 6371000 // Earth's mean radius in meters
+
 double
 haversine_distance(coordinates_t * start, coordinates_t * end)
 {

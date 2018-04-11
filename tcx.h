@@ -1,13 +1,9 @@
 #ifndef TCX_H_
 #define TCX_H_
 
-#include <math.h>
 #include <libxml/tree.h>
 #include <libxml/xpath.h>
 #include <libxml/xpathInternals.h>
-
-#define RAD_PER_DEGREE M_PI / 180.0
-#define RADIUS 6371000 // Earth's mean radius in meters
 
 typedef struct coordinates
 {
