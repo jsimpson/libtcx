@@ -416,32 +416,12 @@ haversine_distance(coordinates_t * start, coordinates_t * end)
 }
 
 void
-calculate_pace(trackpoint_t * previous_trackpoint, trackpoint_t * trackpoint)
-{
-    double distance = interval_distance(previous_trackpoint, trackpoint);
-    if (fabs(distance) > 10e-7)
-    {
-        struct tm t0 = {0}, t1 = {0};
-        strptime(previous_trackpoint->time, "%Y-%m-%dT%H:%M:%S.000Z", &t0);
-        strptime(trackpoint->time, "%Y-%m-%dT%H:%M:%S.000Z", &t1);
-
-        double time = difftime(mktime(&t1), mktime(&t0)) / 60.0;
-
-        trackpoint->pace = time / distance;
-    }
-}
-
-void
 calculate_grade(trackpoint_t * previous_trackpoint, trackpoint_t * trackpoint)
 {
     double elevation = trackpoint->elevation - previous_trackpoint->elevation;
-
     double distance = interval_distance(previous_trackpoint, trackpoint);
-    if (fabs(distance) > 10e-7)
-    {
-        double radians = atan(elevation / distance);
-        trackpoint->grade = 180 * radians / M_PI;
-    }
+    double radians = atan(elevation / distance);
+    trackpoint->grade = 180 * radians / M_PI;
 }
 
 /*
@@ -641,7 +621,6 @@ calculate_summary(tcx_t * tcx)
 
                     if (previous_trackpoint != NULL)
                     {
-                        calculate_pace(previous_trackpoint, trackpoint);
                         calculate_grade(previous_trackpoint, trackpoint);
                         calculate_elevation_delta(lap, previous_trackpoint, trackpoint);
                     }
@@ -772,7 +751,6 @@ print_trackpoint(trackpoint_t * trackpoint)
     printf("  speed     : %.2f\n", trackpoint->speed);
     printf("  power     : %d\n", trackpoint->power);
     printf("  grade     : %.2f\n", trackpoint->grade);
-    printf("  pace      : %.2f\n", trackpoint->pace);
 }
 
 void

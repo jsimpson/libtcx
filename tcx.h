@@ -23,7 +23,6 @@ typedef struct trackpoint
     double speed;
     int power;
     double grade;
-    double pace;
 
     struct trackpoint * next;
 } trackpoint_t;
@@ -118,7 +117,6 @@ int parse_tcx_file(tcx_t * tcx, char * filename);
 double interval_distance(trackpoint_t * previous_trackpoint, trackpoint_t * trackpoint);
 double haversine_distance(coordinates_t * start, coordinates_t * end);
 
-void calculate_pace(trackpoint_t * previous_trackpoint, trackpoint_t * trackpoint);
 void calculate_grade(trackpoint_t * previous_trackpoint, trackpoint_t * trackpoint_t);
 void calculate_grade_adjusted_pace(lap_t * lap);
 void calculate_elevation_delta(lap_t * lap, trackpoint_t * previous_trackpoint, trackpoint_t * trackpoint);
