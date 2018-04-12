@@ -1,5 +1,25 @@
 # fasttcx
+
 A C TCX file parser.
+
+This parser consumes [TCX files](https://en.wikipedia.org/wiki/Training_Center_XML). It builds a set of nested, singly linked lists that correspond to the structure of a TCX file. It aggregates the TCX data and calculates some basic statistics, such as:
+
+* Split/lap:
+    * Speed average/maximum/minimum
+    * Heart rate average/maximum/minimum
+    * Cadence average/maximum/minimum
+    * Maximum and minimum elevation
+    * Total elevation gain / loss
+    * Grade adjusted pace (in seconds)
+
+* Activity:
+    * Speed average/maximum/minimum
+    * Heart rate average/maximum/minimum
+    * Cadence average/maximum/minimum
+    * Maximum and minimum elevation
+    * Total elevation gain / loss
+
+Each trackpoint contains latitude/longitude coordinates, if GSP data is present. It tracks the activities starting and ending points, total time, total distance, etc...
 
 ## Development
 
