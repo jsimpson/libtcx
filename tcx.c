@@ -9,10 +9,6 @@
 #include <libxml/xpathInternals.h>
 #include "tcx.h"
 
-#define __USE_XOPEN
-
-#include <time.h>
-
 static activity_t * current_activity = NULL;
 static lap_t * current_lap = NULL;
 static track_t * current_track = NULL;
