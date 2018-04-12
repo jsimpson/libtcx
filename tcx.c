@@ -425,16 +425,16 @@ calculate_grade(trackpoint_t * previous_trackpoint, trackpoint_t * trackpoint)
  * https://medium.com/strava-engineering/improving-grade-adjusted-pace-b9a2a332a5dc
  * https://www.runnersworld.com/races/downhill-all-the-way
  */
-#define COEFF_PER_GRADE_INCLINE 0.033 * 2
-#define COEFF_PER_GRADE_DECLINE 0.01815 * 2
+#define COEFF_INCLINE 0.033 * 2
+#define COEFF_DECLINE 0.01815 * 2
 #define METERS_TO_FEET 3.28084
 
 void
 calculate_grade_adjusted_pace(lap_t * lap)
 {
     double seconds = 0.00;
-    seconds += ((lap->total_elevation_gain * METERS_TO_FEET) / 100.00) * COEFF_PER_GRADE_INCLINE * lap->total_time;
-    seconds -= ((lap->total_elevation_loss * METERS_TO_FEET) / 100.00) * COEFF_PER_GRADE_DECLINE * lap->total_time;
+    seconds += ((lap->total_elevation_gain * METERS_TO_FEET) / 100.00) * COEFF_INCLINE * lap->total_time;
+    seconds -= ((lap->total_elevation_loss * METERS_TO_FEET) / 100.00) * COEFF_DECLINE * lap->total_time;
     lap->grade_adjusted_pace = lap->total_time + floor(seconds);
 }
 
