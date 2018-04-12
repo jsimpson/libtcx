@@ -19,7 +19,7 @@ This parser consumes [TCX files](https://en.wikipedia.org/wiki/Training_Center_X
     * Maximum and minimum elevation
     * Total elevation gain / loss
 
-Each trackpoint contains latitude/longitude coordinates, if GSP data is present. It tracks the activities starting and ending points, total time, total distance, etc... You can get a better understanding of the various bits of data that can be extracted by looking at the data structures in `tcx.h`.
+Each trackpoint contains latitude/longitude coordinates, if GPS data is present. It tracks the activities starting and ending points, total time, total distance, etc... You can get a better understanding of the various bits of data that can be extracted by looking at the data structures in `tcx.h`.
 
 ## Development
 
