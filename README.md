@@ -2,7 +2,7 @@
 
 A C TCX file parser.
 
-This parser consumes [TCX files](https://en.wikipedia.org/wiki/Training_Center_XML). It builds a set of nested, singly linked lists that correspond to the structure of a TCX file. It aggregates the TCX data and calculates some basic statistics, such as:
+This parser consumes [TCX files](https://en.wikipedia.org/wiki/Training_Center_XML). It builds a set of nested, singly linked lists that correspond to the structure of a TCX file. It also aggregates the data and performs some basic statistical calculations, such as:
 
 * Split/lap:
     * Speed average/maximum/minimum
