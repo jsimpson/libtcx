@@ -60,4 +60,5 @@ Module.symvers
 Mkfile.old
 dkms.conf
 
+objdump.txt
 tags
