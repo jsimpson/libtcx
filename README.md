@@ -10,7 +10,7 @@ This parser consumes [TCX files](https://en.wikipedia.org/wiki/Training_Center_X
     * Cadence average/maximum/minimum
     * Maximum and minimum elevation
     * Total elevation gain / loss
-    * Grade adjusted pace (in seconds)
+    * Grade adjusted time (in seconds)
 
 * Activity:
     * Speed average/maximum/minimum
