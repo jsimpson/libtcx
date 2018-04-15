@@ -430,12 +430,12 @@ calculate_grade(trackpoint_t * previous_trackpoint, trackpoint_t * trackpoint)
 #define METERS_TO_FEET 3.28084
 
 void
-calculate_grade_adjusted_pace(lap_t * lap)
+calculate_grade_adjusted_time(lap_t * lap)
 {
     double seconds = 0.00;
     seconds += ((lap->total_elevation_gain * METERS_TO_FEET) / 100.00) * COEFF_INCLINE * lap->total_time;
     seconds -= ((lap->total_elevation_loss * METERS_TO_FEET) / 100.00) * COEFF_DECLINE * lap->total_time;
-    lap->grade_adjusted_pace = lap->total_time + floor(seconds);
+    lap->grade_adjusted_time = lap->total_time + floor(seconds);
 }
 
 void
@@ -640,7 +640,7 @@ calculate_summary(tcx_t * tcx)
                 track = track->next;
             }
 
-            calculate_grade_adjusted_pace(lap);
+            calculate_grade_adjusted_time(lap);
 
             if (lap->cadence_maximum == INT_MIN) lap->cadence_maximum = 0;
             if (lap->cadence_minimum == INT_MAX) lap->cadence_minimum = 0;
@@ -723,7 +723,7 @@ print_lap(lap_t * lap)
     printf("  cadence_maximum    : %d\n", lap->cadence_maximum);
     printf("  cadence_minimum    : %d\n", lap->cadence_minimum);
     printf("  elevation          : %.2f\n", lap->total_elevation_gain - lap->total_elevation_loss);
-    printf("  grade_adjusted_pace: %.2f\n", lap->grade_adjusted_pace);
+    printf("  grade_adjusted_time: %.2f\n", lap->grade_adjusted_time);
 }
 
 void

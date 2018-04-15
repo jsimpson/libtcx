@@ -56,7 +56,7 @@ typedef struct lap
     double elevation_minimum;
     double total_elevation_gain;
     double total_elevation_loss;
-    double grade_adjusted_pace;
+    double grade_adjusted_time;
     track_t * tracks;
     struct lap * next;
 } lap_t;
@@ -118,7 +118,7 @@ double interval_distance(trackpoint_t * previous_trackpoint, trackpoint_t * trac
 double haversine_distance(coordinates_t * start, coordinates_t * end);
 
 void calculate_grade(trackpoint_t * previous_trackpoint, trackpoint_t * trackpoint_t);
-void calculate_grade_adjusted_pace(lap_t * lap);
+void calculate_grade_adjusted_time(lap_t * lap);
 void calculate_elevation_delta(lap_t * lap, trackpoint_t * previous_trackpoint, trackpoint_t * trackpoint);
 void calculate_summary_activity(activity_t * activity, lap_t * lap);
 void calculate_summary_lap(activity_t * activity, lap_t * lap, trackpoint_t * trackpoint);
