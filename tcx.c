@@ -629,7 +629,6 @@ calculate_summary(tcx_t * tcx)
                 lap->heart_rate_average /= lap->num_trackpoints;
                 lap->speed_average /= lap->num_trackpoints;
 
-
                 if (lap->cadence_maximum == INT_MIN) lap->cadence_maximum = 0;
                 if (lap->cadence_minimum == INT_MAX) lap->cadence_minimum = 0;
                 if (lap->heart_rate_maximum == INT_MIN) lap->heart_rate_maximum = 0;
