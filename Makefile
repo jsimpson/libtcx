@@ -1,5 +1,5 @@
 CC=gcc
-CFLAGS=-Wall -g -I/usr/include/libxml2/ -O3 -std=gnu11
+CFLAGS=-Wall -Wextra -Werror -Wmissing-prototypes -pedantic -g -I/usr/include/libxml2/ -O3 -std=c99
 LDFLAGS=-lxml2 -lm
 
 all: fasttcx library
