@@ -5,10 +5,10 @@ LDFLAGS=-lxml2 -lm
 all: fasttcx library
 
 fasttcx:
-	$(CC) $(CFLAGS) -fPIC main.c tcx.c -o fasttcx $^ $(LDFLAGS)
+	$(CC) $(CFLAGS) -fPIC -D_DEFAULT_SOURCE main.c tcx.c -o fasttcx $^ $(LDFLAGS)
 
 library:
-	$(CC) $(CFLAGS) -fPIC -shared tcx.c -o libfasttcx.so $^ $(LDFLAGS)
+	$(CC) $(CFLAGS) -fPIC -D_DEFAULT_SOURCE -shared tcx.c -o libfasttcx.so $^ $(LDFLAGS)
 
 clean:
 	rm fasttcx
